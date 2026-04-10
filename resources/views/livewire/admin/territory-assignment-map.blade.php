@@ -1,0 +1,303 @@
+<div class="p-6"
+     x-data="{}"
+     x-init="
+        const apply = (json) => {
+            if (!json) return;
+            try {
+                const data = JSON.parse(json);
+                window.__adminMapPending = data;
+                if (window.AdminTerritoryMap) window.AdminTerritoryMap.update(data);
+            } catch (e) {}
+        };
+        apply($wire.mapDataJson);
+        $watch('$wire.mapDataJson', apply);
+     ">
+
+    {{-- D3 + TopoJSON --}}
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    @vite('resources/js/admin-territory-map.js')
+
+    <style>
+        #adminMapWrap .state-path {
+            transition: opacity 0.15s, filter 0.15s;
+        }
+        #adminMapWrap .state-path:hover {
+            opacity: 0.85;
+            filter: brightness(1.3);
+            stroke: #fff;
+            stroke-width: 1.8;
+        }
+    </style>
+
+    {{-- Header --}}
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Territory Map Editor</h1>
+            <p class="text-paleSky/70 text-sm mt-1">Click a person to arm them, then click states to assign. Changes save instantly.</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a href="{{ route('admin.sales-team.index') }}" wire:navigate
+               class="px-4 py-2 bg-white/10 hover:bg-white/20 text-paleSky text-sm font-medium rounded-lg transition-colors">
+                Member Details
+            </a>
+            <button type="button" wire:click="openCreateModal"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-[#00A599] hover:bg-[#00A599]/80 text-white text-sm font-medium rounded-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add Member
+            </button>
+        </div>
+    </div>
+
+    {{-- Role tabs --}}
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+        @foreach($roleTypes as $role)
+            <button type="button"
+                    wire:click="setRole('{{ $role->value }}')"
+                    class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors
+                        {{ $activeRole === $role->value
+                            ? 'bg-[#00A599] text-white border-[#00A599]'
+                            : 'bg-white/5 text-paleSky/70 border-white/10 hover:bg-white/10 hover:text-white' }}">
+                {{ $role->label() }}
+            </button>
+        @endforeach
+    </div>
+
+    {{-- Map + Sidebar --}}
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 items-start">
+
+        {{-- Map column --}}
+        <div class="bg-[#0c1d31] border border-white/10 rounded-xl p-3 relative">
+            <div id="adminMapWrap" wire:ignore>
+                {{-- D3 renders SVG here --}}
+            </div>
+            <div id="adminMapTooltip"
+                 class="hidden absolute pointer-events-none z-10 bg-[#12213a]/95 border border-[#00A599] rounded-lg px-3 py-2 text-xs text-white shadow-xl"></div>
+
+            @if($armedMemberId)
+                @php
+                    $armedCard = collect($memberCards)->firstWhere('id', $armedMemberId);
+                @endphp
+                @if($armedCard)
+                    <div class="absolute top-3 left-3 flex items-center gap-2 bg-[#0a1828]/90 backdrop-blur-sm border border-white/20 rounded-lg pl-2 pr-3 py-1.5 text-xs text-white shadow-lg">
+                        <span class="w-3 h-3 rounded-full" style="background: {{ $armedCard['color'] }}"></span>
+                        <span>Armed: <strong>{{ $armedCard['name'] }}</strong></span>
+                        <button type="button" wire:click="armMember({{ $armedMemberId }})"
+                                class="ml-1 text-paleSky/60 hover:text-white" title="Disarm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                @endif
+            @else
+                <div class="absolute top-3 left-3 bg-[#0a1828]/90 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-1.5 text-xs text-paleSky/70 shadow-lg">
+                    Pick a person from the sidebar to start assigning.
+                </div>
+            @endif
+        </div>
+
+        {{-- Sidebar --}}
+        <div class="bg-[#0c1d31] border border-white/10 rounded-xl p-4 max-h-[calc(100vh-220px)] overflow-y-auto">
+            <h2 class="text-xs uppercase tracking-wider text-paleSky/50 font-semibold mb-3">
+                {{ \App\Enums\RoleType::from($activeRole)->label() }}
+            </h2>
+
+            @if(count($memberCards) === 0)
+                <p class="text-sm text-paleSky/50 italic">No members in this discipline yet. Use "Add Member" to create one.</p>
+            @else
+                <div class="space-y-1.5">
+                    @foreach($memberCards as $card)
+                        <button type="button"
+                                wire:key="card-{{ $card['id'] }}"
+                                wire:click="armMember({{ $card['id'] }})"
+                                class="w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors text-left
+                                    {{ $armedMemberId === $card['id']
+                                        ? 'bg-white/10 border-white/30'
+                                        : 'border-transparent hover:bg-white/5' }}">
+                            <span class="w-4 h-4 rounded-full shrink-0" style="background: {{ $card['color'] }}"></span>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-white font-medium truncate">{{ $card['name'] }}</div>
+                                <div class="text-[11px] text-paleSky/50">{{ $card['state_count'] }} {{ Str::plural('state', $card['state_count']) }}</div>
+                            </div>
+                            @if($armedMemberId === $card['id'])
+                                <svg class="w-4 h-4 text-[#00A599]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                            @endif
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- State action modal --}}
+    <flux:modal name="territory-state-modal" class="max-w-lg" wire:close="closeStatePopover">
+        @if($modalState)
+            @php
+                $stateNames = [
+                    'AL'=>'Alabama','AK'=>'Alaska','AZ'=>'Arizona','AR'=>'Arkansas','CA'=>'California',
+                    'CO'=>'Colorado','CT'=>'Connecticut','DE'=>'Delaware','DC'=>'District of Columbia',
+                    'FL'=>'Florida','GA'=>'Georgia','HI'=>'Hawaii','ID'=>'Idaho','IL'=>'Illinois',
+                    'IN'=>'Indiana','IA'=>'Iowa','KS'=>'Kansas','KY'=>'Kentucky','LA'=>'Louisiana',
+                    'ME'=>'Maine','MD'=>'Maryland','MA'=>'Massachusetts','MI'=>'Michigan','MN'=>'Minnesota',
+                    'MS'=>'Mississippi','MO'=>'Missouri','MT'=>'Montana','NE'=>'Nebraska','NV'=>'Nevada',
+                    'NH'=>'New Hampshire','NJ'=>'New Jersey','NM'=>'New Mexico','NY'=>'New York',
+                    'NC'=>'North Carolina','ND'=>'North Dakota','OH'=>'Ohio','OK'=>'Oklahoma','OR'=>'Oregon',
+                    'PA'=>'Pennsylvania','RI'=>'Rhode Island','SC'=>'South Carolina','SD'=>'South Dakota',
+                    'TN'=>'Tennessee','TX'=>'Texas','UT'=>'Utah','VT'=>'Vermont','VA'=>'Virginia',
+                    'WA'=>'Washington','WV'=>'West Virginia','WI'=>'Wisconsin','WY'=>'Wyoming',
+                ];
+                $armedCard = $armedMemberId ? collect($memberCards)->firstWhere('id', $armedMemberId) : null;
+            @endphp
+
+            <div class="space-y-5">
+                <div>
+                    <flux:heading size="lg">{{ $stateNames[$modalState] ?? $modalState }} ({{ $modalState }})</flux:heading>
+                    <flux:subheading>{{ \App\Enums\RoleType::from($activeRole)->label() }}</flux:subheading>
+                </div>
+
+                {{-- Current assignments --}}
+                <div>
+                    <p class="text-xs uppercase tracking-wider text-paleSky/50 font-semibold mb-2">Currently assigned</p>
+                    @if(count($modalAssignments) === 0)
+                        <p class="text-sm text-paleSky/50 italic">No one assigned to this state in this discipline.</p>
+                    @else
+                        <div class="space-y-1.5">
+                            @foreach($modalAssignments as $a)
+                                <div class="flex items-center gap-3 px-3 py-2 bg-white/5 rounded-lg" wire:key="modal-a-{{ $a['id'] }}">
+                                    <span class="w-3 h-3 rounded-full" style="background: {{ $a['color'] }}"></span>
+                                    <div class="flex-1">
+                                        <div class="text-sm text-white">{{ $a['name'] }}</div>
+                                        @if($a['region'])
+                                            <div class="text-[11px] text-paleSky/60 italic">{{ $a['region'] }}</div>
+                                        @endif
+                                    </div>
+                                    <button type="button" wire:click="unassignFromState({{ $a['id'] }})"
+                                            class="text-paleSky/40 hover:text-red-400 transition-colors" title="Unassign">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                {{-- Actions --}}
+                @if(! $splitMode)
+                    <div class="space-y-3 pt-2 border-t border-white/10">
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-paleSky/50 font-semibold mb-1.5">Assign to</label>
+                            <select wire:model.live="modalSelectedMemberId"
+                                    class="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#00A599]">
+                                <option value="">Select a member…</option>
+                                @foreach($allMembers as $m)
+                                    <option value="{{ $m->id }}">{{ $m->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <button type="button" wire:click="assignWholeState"
+                                @disabled(! $modalSelectedMemberId)
+                                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#00A599] hover:bg-[#00A599]/80 disabled:bg-white/10 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors">
+                            Assign whole state
+                        </button>
+
+                        <button type="button" wire:click="enterSplitMode"
+                                class="w-full px-4 py-2 bg-white/5 hover:bg-white/10 text-paleSky text-sm font-medium rounded-lg transition-colors">
+                            Split into regions…
+                        </button>
+                    </div>
+                @else
+                    <div class="space-y-3 pt-2 border-t border-white/10">
+                        <p class="text-xs uppercase tracking-wider text-paleSky/50 font-semibold">Split assignments</p>
+
+                        @foreach($splitRows as $i => $row)
+                            <div class="flex items-center gap-2" wire:key="split-{{ $i }}">
+                                <select wire:model="splitRows.{{ $i }}.member_id"
+                                        class="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#00A599]">
+                                    <option value="">Select member...</option>
+                                    @foreach($allMembers as $m)
+                                        <option value="{{ $m->id }}">{{ $m->name }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="text" wire:model="splitRows.{{ $i }}.region"
+                                       placeholder="Region label"
+                                       class="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#00A599]" />
+                                @if(count($splitRows) > 2)
+                                    <button type="button" wire:click="removeSplitRow({{ $i }})"
+                                            class="text-paleSky/40 hover:text-red-400 p-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                @endif
+                            </div>
+                        @endforeach
+
+                        @error('splitRows') <p class="text-red-400 text-xs">{{ $message }}</p> @enderror
+
+                        <div class="flex items-center justify-between pt-1">
+                            <button type="button" wire:click="addSplitRow"
+                                    class="text-xs text-[#00A599] hover:underline">+ Add region</button>
+                            <div class="flex items-center gap-2">
+                                <button type="button" wire:click="$set('splitMode', false)"
+                                        class="px-3 py-1.5 text-sm text-paleSky/70 hover:text-white">Cancel</button>
+                                <button type="button" wire:click="saveSplit"
+                                        class="px-4 py-1.5 bg-[#00A599] hover:bg-[#00A599]/80 text-white text-sm font-medium rounded-lg">Save split</button>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        @endif
+    </flux:modal>
+
+    {{-- Quick-create member modal --}}
+    <flux:modal name="territory-create-member" class="max-w-md">
+        <form wire:submit="createMember" class="space-y-5">
+            <div>
+                <flux:heading size="lg">Add Sales Team Member</flux:heading>
+                <flux:subheading>They'll be added to {{ \App\Enums\RoleType::from($activeRole)->label() }} when you click their first state.</flux:subheading>
+            </div>
+
+            <div>
+                <label class="block text-sm text-paleSky/70 mb-1">Name *</label>
+                <input type="text" wire:model="newMember.name"
+                       class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#00A599]"
+                       placeholder="John Doe" />
+                @error('newMember.name') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label class="block text-sm text-paleSky/70 mb-1">Email</label>
+                <input type="email" wire:model="newMember.email"
+                       class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#00A599]"
+                       placeholder="jdoe@hirschsecure.com" />
+                @error('newMember.email') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label class="block text-sm text-paleSky/70 mb-1">Phone</label>
+                <input type="text" wire:model="newMember.phone"
+                       class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#00A599]"
+                       placeholder="555.123.4567" />
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <flux:modal.close>
+                    <button type="button" class="px-4 py-2 text-sm text-paleSky/70 hover:text-white">Cancel</button>
+                </flux:modal.close>
+                <button type="submit" class="px-4 py-2 bg-[#00A599] hover:bg-[#00A599]/80 text-white text-sm font-medium rounded-lg">
+                    Create &amp; Arm
+                </button>
+            </div>
+        </form>
+    </flux:modal>
+</div>
