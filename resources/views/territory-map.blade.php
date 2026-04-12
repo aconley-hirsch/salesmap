@@ -91,8 +91,7 @@
      x-on:close-detail.window="closeDetail()"
      x-on:keydown.escape.window="onEscape()">
 
-    <x-header title="Territory Map" subtitle="US SALES TEAM" />
-    <x-page-nav current="territory-map" />
+    <x-header current="territory-map" />
 
     {{-- Controls --}}
     <div class="flex gap-2 px-2 sm:px-6 py-3 flex-wrap items-center">

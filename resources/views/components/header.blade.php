@@ -1,10 +1,35 @@
-@props(['title' => null, 'subtitle' => null])
+@props(['title' => null, 'subtitle' => null, 'current' => null])
 
 <header class="w-full text-sm mb-4">
-    <nav class="flex items-center justify-between w-full">
+    <nav class="flex items-center justify-between w-full px-2 sm:px-6">
+        {{-- Logo --}}
+        <a href="{{ route('territory-map') }}" class="shrink-0">
+            <img src="/img/logo.png" alt="{{ config('app.name') }}" class="h-8 sm:h-10" />
+        </a>
+
+        {{-- Page tabs --}}
+        <div class="flex items-center gap-1" aria-label="Page navigation">
+            <a href="{{ route('territory-map') }}"
+               @class([
+                   'px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all',
+                   'bg-ecoGreen text-midnightSignal' => $current === 'territory-map',
+                   'text-paleSky/70 hover:text-white hover:bg-white/10' => $current !== 'territory-map',
+               ])>
+                Territory Map
+            </a>
+            <a href="{{ route('key-contacts') }}"
+               @class([
+                   'px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all',
+                   'bg-ecoGreen text-midnightSignal' => $current === 'key-contacts',
+                   'text-paleSky/70 hover:text-white hover:bg-white/10' => $current !== 'key-contacts',
+               ])>
+                Key Contacts
+            </a>
+        </div>
+
         {{-- Admin / Login --}}
         @if (Route::has('login'))
-            <div x-data="{ open: false }" class="relative">
+            <div x-data="{ open: false }" class="relative shrink-0">
                 <button
                     @click="open = !open"
                     @click.outside="open = false"
@@ -23,7 +48,7 @@
                     x-transition:leave="transition ease-in duration-75"
                     x-transition:leave-start="transform opacity-100 scale-100"
                     x-transition:leave-end="transform opacity-0 scale-95"
-                    class="absolute left-0 mt-2 w-48 bg-[#0a2a3d] border border-white/20 rounded-xl shadow-xl shadow-black/30 overflow-hidden z-50"
+                    class="absolute right-0 mt-2 w-48 bg-[#0a2a3d] border border-white/20 rounded-xl shadow-xl shadow-black/30 overflow-hidden z-50"
                 >
                     <div class="py-2">
                         @auth
@@ -47,18 +72,5 @@
         @else
             <div class="w-10"></div>
         @endif
-
-        {{-- Page Title --}}
-        @if($title)
-            <div class="flex flex-col sm:flex-row sm:items-center sm:gap-3 text-center sm:text-left">
-                <h1 class="text-base sm:text-lg font-semibold text-white m-0 leading-tight">{{ $title }}</h1>
-                @if($subtitle)
-                    <span class="text-[10px] text-[#00A599] font-medium tracking-wider">{{ $subtitle }}</span>
-                @endif
-            </div>
-        @endif
-
-        {{-- Spacer to keep title centered --}}
-        <div class="w-10"></div>
     </nav>
 </header>

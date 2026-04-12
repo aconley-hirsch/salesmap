@@ -6,8 +6,7 @@
 <body>
 <div class="min-h-screen bg-gradient-to-b from-midnightSignal to-deepTeal font-montserrat text-paleSky p-3 sm:p-6">
 
-    <x-header title="Key Contacts" subtitle="HIRSCH SALES TEAM" />
-    <x-page-nav current="key-contacts" />
+    <x-header current="key-contacts" />
 
     {{-- Contact groups --}}
     <div class="px-2 sm:px-6 pb-6">
