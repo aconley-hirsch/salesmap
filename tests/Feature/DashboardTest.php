@@ -7,10 +7,10 @@ test('guests are redirected to the login page', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $user = User::factory()->create();
+test('authenticated users are redirected from dashboard to territory editor', function () {
+    $user = User::factory()->create(['is_admin' => true]);
     $this->actingAs($user);
 
     $response = $this->get(route('dashboard'));
-    $response->assertOk();
+    $response->assertRedirect('/admin/territory-map');
 });

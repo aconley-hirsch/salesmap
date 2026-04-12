@@ -25,8 +25,8 @@
                             {{ __('Key Contacts') }}
                         </flux:sidebar.item>
 
-                        <flux:sidebar.item icon="envelope" :href="route('admin.invitations.index')" :current="request()->routeIs('admin.invitations.*')" wire:navigate>
-                            {{ __('Invitations') }}
+                        <flux:sidebar.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>
+                            {{ __('Users') }}
                         </flux:sidebar.item>
                     @endif
                 </flux:sidebar.group>
