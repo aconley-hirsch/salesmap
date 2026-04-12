@@ -92,6 +92,7 @@
      x-on:keydown.escape.window="onEscape()">
 
     <x-header title="Territory Map" subtitle="US SALES TEAM" />
+    <x-page-nav current="territory-map" />
 
     {{-- Controls --}}
     <div class="flex gap-2 px-2 sm:px-6 py-3 flex-wrap items-center">
@@ -107,11 +108,6 @@
                 {{ $role['label'] }}
             </button>
         @endforeach
-
-        <a href="{{ route('key-contacts') }}"
-           class="px-3 sm:px-4 py-2 border rounded-lg text-xs sm:text-sm transition-all bg-[#12213a] text-paleSky/80 border-[#2a3a4e] hover:bg-[#1a2d4a] hover:border-[#3a5a7e]">
-            Key Contacts
-        </a>
 
         <div class="flex-1"></div>
 
