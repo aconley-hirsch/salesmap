@@ -9,7 +9,7 @@
     <x-header current="key-contacts" />
 
     {{-- Contact groups --}}
-    <div class="px-2 sm:px-6 pb-6">
+    <div class="max-w-5xl mx-auto px-2 sm:px-6 pb-6">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($groups as $groupName => $contacts)
                 @if($groupName === 'Shared Inboxes')
