@@ -172,6 +172,6 @@
 <script>
     window.territoryMapData = @json($mapData);
 </script>
-@livewireScripts
+@fluxScripts
 </body>
 </html>

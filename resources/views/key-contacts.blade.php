@@ -74,5 +74,6 @@
         @endif
     </div>
 </div>
+@fluxScripts
 </body>
 </html>
