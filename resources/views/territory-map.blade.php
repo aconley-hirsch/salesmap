@@ -108,6 +108,11 @@
             </button>
         @endforeach
 
+        <a href="{{ route('key-contacts') }}"
+           class="px-3 sm:px-4 py-2 border rounded-lg text-xs sm:text-sm transition-all bg-[#12213a] text-paleSky/80 border-[#2a3a4e] hover:bg-[#1a2d4a] hover:border-[#3a5a7e]">
+            Key Contacts
+        </a>
+
         <div class="flex-1"></div>
 
         <div class="relative w-full sm:w-auto order-first sm:order-last">

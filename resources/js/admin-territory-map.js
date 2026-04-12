@@ -30,12 +30,20 @@ let svg, defs, g, pathGen
 let stateFeatures = []
 let mapData = { people: {}, states: {}, colors: {} }
 let pendingData = null
-let initialized = false
 
 async function init() {
   const wrap = document.getElementById('adminMapWrap')
-  if (!wrap || initialized) return
-  initialized = true
+  if (!wrap) return
+
+  // Reset module state — the previous body (if any) was swapped out by wire:navigate
+  // and the prior d3 selections point at detached nodes. If an SVG is already in
+  // the new wrap (full page reload), bail out.
+  if (wrap.querySelector('svg')) return
+
+  svg = null
+  defs = null
+  g = null
+  pathGen = null
 
   const width = 960, height = 600
   svg = d3.select(wrap)
@@ -103,11 +111,22 @@ async function init() {
 
 function update(data) {
   if (!data) return
-  // If init hasn't finished building the SVG yet, queue the data for after init
+
+  // After wire:navigate, our g reference still points at the previous (now
+  // detached) SVG node. Detect that case and fall through to the pending-queue
+  // path so init() can pick up the data once it builds a fresh SVG.
+  if (g && !document.body.contains(g.node())) {
+    svg = null
+    defs = null
+    g = null
+    pathGen = null
+  }
+
   if (!g) {
     pendingData = data
     return
   }
+
   mapData = data
   recolor()
 }
@@ -197,7 +216,17 @@ function onStateClick(e, d) {
 
 window.AdminTerritoryMap = { update, init }
 
-// Init once Livewire is ready (so the wire:ignore container exists)
-document.addEventListener('livewire:initialized', init)
-// Fallback if script loads after initialized event
-if (window.Livewire) init()
+function bootIfPresent() {
+  if (document.getElementById('adminMapWrap')) {
+    init().catch(err => console.error('Admin territory map init failed', err))
+  }
+}
+
+// First page load
+document.addEventListener('livewire:initialized', bootIfPresent)
+// Subsequent SPA navigations via wire:navigate — fires on every navigation
+document.addEventListener('livewire:navigated', bootIfPresent)
+// Fallback in case the script loads after both events have already fired
+if (document.readyState !== 'loading') {
+  bootIfPresent()
+}

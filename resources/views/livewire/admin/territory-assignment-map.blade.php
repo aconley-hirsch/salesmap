@@ -13,10 +13,12 @@
         $watch('$wire.mapDataJson', apply);
      ">
 
-    {{-- D3 + TopoJSON --}}
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://d3js.org/topojson.v3.min.js"></script>
-    @vite('resources/js/admin-territory-map.js')
+    {{-- D3 + TopoJSON loaded via @assets so Livewire injects them once into the head --}}
+    @assets
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <script src="https://d3js.org/topojson.v3.min.js"></script>
+        @vite('resources/js/admin-territory-map.js')
+    @endassets
 
     <style>
         #adminMapWrap .state-path {

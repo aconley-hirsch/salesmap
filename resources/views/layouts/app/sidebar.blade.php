@@ -3,8 +3,8 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+    <body class="min-h-screen bg-gradient-to-b from-midnightSignal to-deepTeal bg-fixed font-montserrat text-paleSky">
+        <flux:sidebar sticky collapsible="mobile" class="border-e border-white/10 !bg-[#0a2a3d]/80 backdrop-blur-sm">
             <flux:sidebar.header>
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
@@ -27,6 +27,10 @@
 
                         <flux:sidebar.item icon="envelope" :href="route('admin.invitations.index')" :current="request()->routeIs('admin.invitations.*')" wire:navigate>
                             {{ __('Invitations') }}
+                        </flux:sidebar.item>
+
+                        <flux:sidebar.item icon="phone" :href="route('admin.key-contacts.index')" :current="request()->routeIs('admin.key-contacts.*')" wire:navigate>
+                            {{ __('Key Contacts') }}
                         </flux:sidebar.item>
                     @endif
                 </flux:sidebar.group>
