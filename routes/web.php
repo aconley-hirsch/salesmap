@@ -14,7 +14,7 @@ Route::get('/', [TerritoryMapController::class, 'index'])->name('territory-map')
 Route::get('/contacts', [KeyContactController::class, 'index'])->name('key-contacts');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::redirect('dashboard', '/admin/territory-map')->name('dashboard');
 });
 
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {

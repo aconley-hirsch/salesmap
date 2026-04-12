@@ -12,10 +12,6 @@
 
             <flux:sidebar.nav>
                 <flux:sidebar.group :heading="__('Admin')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </flux:sidebar.item>
-
                     @if(auth()->user()?->is_admin)
                         <flux:sidebar.item icon="map" :href="route('admin.territory-map.edit')" :current="request()->routeIs('admin.territory-map.*')" wire:navigate>
                             {{ __('Territory Editor') }}
@@ -25,12 +21,12 @@
                             {{ __('Sales Team') }}
                         </flux:sidebar.item>
 
-                        <flux:sidebar.item icon="envelope" :href="route('admin.invitations.index')" :current="request()->routeIs('admin.invitations.*')" wire:navigate>
-                            {{ __('Invitations') }}
-                        </flux:sidebar.item>
-
                         <flux:sidebar.item icon="phone" :href="route('admin.key-contacts.index')" :current="request()->routeIs('admin.key-contacts.*')" wire:navigate>
                             {{ __('Key Contacts') }}
+                        </flux:sidebar.item>
+
+                        <flux:sidebar.item icon="envelope" :href="route('admin.invitations.index')" :current="request()->routeIs('admin.invitations.*')" wire:navigate>
+                            {{ __('Invitations') }}
                         </flux:sidebar.item>
                     @endif
                 </flux:sidebar.group>
