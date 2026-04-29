@@ -53,6 +53,15 @@ test('clicking a state opens the modal with that state', function () {
         ->assertSet('modalState', 'CA');
 });
 
+test('territory modals use the branded admin background', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)
+        ->toContain('[data-modal="territory-state-modal"]')
+        ->toContain('[data-modal="territory-create-member"]')
+        ->toContain('background: #0a2a3d !important;');
+});
+
 test('assigning a whole state creates the assignment and an audit log', function () {
     $member = SalesTeamMember::factory()->create(['name' => 'Jane Doe']);
 

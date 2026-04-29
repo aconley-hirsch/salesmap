@@ -186,6 +186,18 @@ select:focus[data-flux-control] {
     background: rgba(255, 255, 255, 0.05) !important;
 }
 
+[data-modal="territory-state-modal"],
+[data-modal="territory-create-member"] {
+    background: #0a2a3d !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #dae3ea !important;
+}
+
+[data-modal="territory-state-modal"]::backdrop,
+[data-modal="territory-create-member"]::backdrop {
+    background-color: rgba(3, 30, 47, 0.7) !important;
+}
+
 [data-flux-button][data-variant="primary"] {
     background: #92d400 !important;
     color: #031e2f !important;
