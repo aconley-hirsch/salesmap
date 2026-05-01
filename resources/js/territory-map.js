@@ -277,24 +277,41 @@ function colorMap() {
     if (Array.isArray(value)) {
       const gradId = 'split-' + territory.replace(/[^a-z0-9]/gi, '-')
       const bbox = this.getBBox()
+      const direction = value.find(entry => entry.splitDirection)?.splitDirection || 'west_east'
       const grad = defs.append('linearGradient')
         .attr('class', 'split-grad')
         .attr('id', gradId)
         .attr('gradientUnits', 'userSpaceOnUse')
         .attr('x1', bbox.x)
         .attr('y1', bbox.y)
-        .attr('x2', bbox.x)
-        .attr('y2', bbox.y + bbox.height)
-      const segment = 100 / value.length
+        .attr('x2', direction === 'west_east' ? bbox.x + bbox.width : bbox.x)
+        .attr('y2', direction === 'west_east' ? bbox.y : bbox.y + bbox.height)
+      const percents = normalizedSplitPercents(value)
+      let offset = 0
       value.forEach((entry, index) => {
         const color = colors[entry.key] || '#333'
-        grad.append('stop').attr('offset', (index * segment) + '%').attr('stop-color', color)
-        grad.append('stop').attr('offset', ((index + 1) * segment) + '%').attr('stop-color', color)
+        grad.append('stop').attr('offset', offset + '%').attr('stop-color', color)
+        offset += percents[index]
+        grad.append('stop').attr('offset', offset + '%').attr('stop-color', color)
       })
       return `url(#${gradId})`
     }
     return colors[value] || '#333'
   })
+}
+
+function normalizedSplitPercents(entries) {
+  const explicit = entries.map(entry => Number(entry.splitPercent || 0))
+  const total = explicit.reduce((sum, value) => sum + value, 0)
+
+  if (entries.length > 0 && total === 100 && explicit.every(value => value > 0)) {
+    return explicit
+  }
+
+  const equal = Math.floor(100 / entries.length)
+  const remainder = 100 - (equal * entries.length)
+
+  return entries.map((_, index) => equal + (index === 0 ? remainder : 0))
 }
 
 function setView(view) {

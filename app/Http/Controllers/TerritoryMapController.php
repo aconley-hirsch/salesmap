@@ -14,6 +14,7 @@ class TerritoryMapController extends Controller
             ->with('salesTeamMember')
             ->whereHas('salesTeamMember', fn ($q) => $q->where('is_active', true))
             ->orderBy('territory_code')
+            ->orderBy('split_order')
             ->orderBy('region')
             ->orderBy('id')
             ->get();
@@ -46,6 +47,9 @@ class TerritoryMapController extends Controller
                 $maps[$roleType][$territoryCode][] = [
                     'key' => $slug,
                     'region' => $assignment->region,
+                    'splitDirection' => $assignment->split_direction ?: 'west_east',
+                    'splitOrder' => $assignment->split_order,
+                    'splitPercent' => $assignment->split_percent,
                 ];
             } elseif (! isset($maps[$roleType][$territoryCode])) {
                 $maps[$roleType][$territoryCode] = $slug;

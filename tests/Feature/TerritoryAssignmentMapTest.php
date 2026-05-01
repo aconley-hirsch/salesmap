@@ -156,6 +156,48 @@ test('saving a split creates two regional assignments', function () {
     expect($assignments->pluck('region')->all())->toContain('Northern CA', 'Southern CA');
 });
 
+test('saving a split stores dynamic direction order and percentages', function () {
+    $west = SalesTeamMember::factory()->create(['name' => 'West']);
+    $middle = SalesTeamMember::factory()->create(['name' => 'Middle']);
+    $east = SalesTeamMember::factory()->create(['name' => 'East']);
+
+    Livewire::actingAs($this->admin)
+        ->test(TerritoryAssignmentMap::class)
+        ->dispatch('territory-clicked', territoryCode: 'US-TN')
+        ->set('splitDirection', 'west_east')
+        ->set('splitRows', [
+            ['member_id' => $west->id, 'region' => 'West TN', 'percent' => 30],
+            ['member_id' => $middle->id, 'region' => 'Middle TN', 'percent' => 40],
+            ['member_id' => $east->id, 'region' => 'East TN', 'percent' => 30],
+        ])
+        ->call('saveSplit');
+
+    $assignments = TerritoryAssignment::where('territory_code', 'US-TN')
+        ->where('role_type', 'rsm')
+        ->orderBy('split_order')
+        ->get();
+
+    expect($assignments)->toHaveCount(3);
+    expect($assignments->pluck('region')->all())->toBe(['West TN', 'Middle TN', 'East TN']);
+    expect($assignments->pluck('split_direction')->unique()->values()->all())->toBe(['west_east']);
+    expect($assignments->pluck('split_percent')->all())->toBe([30, 40, 30]);
+});
+
+test('split percentages must total one hundred when provided', function () {
+    $first = SalesTeamMember::factory()->create();
+    $second = SalesTeamMember::factory()->create();
+
+    Livewire::actingAs($this->admin)
+        ->test(TerritoryAssignmentMap::class)
+        ->dispatch('territory-clicked', territoryCode: 'US-TX')
+        ->set('splitRows', [
+            ['member_id' => $first->id, 'region' => 'North TX', 'percent' => 60],
+            ['member_id' => $second->id, 'region' => 'South TX', 'percent' => 60],
+        ])
+        ->call('saveSplit')
+        ->assertHasErrors('splitRows');
+});
+
 test('can assign and split Canadian and global territories', function () {
     $canada = SalesTeamMember::factory()->create(['name' => 'Canada Owner']);
     $emeaNorth = SalesTeamMember::factory()->create(['name' => 'EMEA North']);

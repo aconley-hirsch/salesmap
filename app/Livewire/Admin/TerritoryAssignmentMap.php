@@ -28,7 +28,9 @@ class TerritoryAssignmentMap extends Component
 
     public string $mapDataJson = '';
 
-    /** @var array<int, array{member_id: ?int, region: string}> */
+    public string $splitDirection = 'west_east';
+
+    /** @var array<int, array{member_id: ?int, region: string, percent: int|string|null}> */
     public array $splitRows = [];
 
     public array $newMember = [
@@ -49,8 +51,8 @@ class TerritoryAssignmentMap extends Component
     public function mount(): void
     {
         $this->splitRows = [
-            ['member_id' => null, 'region' => ''],
-            ['member_id' => null, 'region' => ''],
+            ['member_id' => null, 'region' => '', 'percent' => 50],
+            ['member_id' => null, 'region' => '', 'percent' => 50],
         ];
         $this->refreshMapData();
     }
@@ -82,9 +84,10 @@ class TerritoryAssignmentMap extends Component
         $this->modalTerritory = $territoryCode;
         $this->modalSelectedMemberId = $this->armedMemberId;
         $this->splitMode = false;
+        $this->splitDirection = 'west_east';
         $this->splitRows = [
-            ['member_id' => $this->armedMemberId, 'region' => ''],
-            ['member_id' => null, 'region' => ''],
+            ['member_id' => $this->armedMemberId, 'region' => '', 'percent' => 50],
+            ['member_id' => null, 'region' => '', 'percent' => 50],
         ];
         $this->modal('territory-state-modal')->show();
     }
@@ -100,6 +103,7 @@ class TerritoryAssignmentMap extends Component
         $this->modalTerritory = null;
         $this->modalSelectedMemberId = null;
         $this->splitMode = false;
+        $this->splitDirection = 'west_east';
         $this->modal('territory-state-modal')->close();
     }
 
@@ -150,6 +154,9 @@ class TerritoryAssignmentMap extends Component
                 'role_type' => $this->activeRole,
                 'territory_code' => $territoryCode,
                 'region' => null,
+                'split_direction' => null,
+                'split_order' => null,
+                'split_percent' => null,
                 'color' => $color,
             ]);
 
@@ -209,24 +216,29 @@ class TerritoryAssignmentMap extends Component
         $existing = TerritoryAssignment::query()
             ->where('role_type', $this->activeRole)
             ->where('territory_code', $this->modalTerritory)
+            ->orderBy('split_order')
+            ->orderBy('id')
             ->get();
 
         if ($existing->count() > 0 && $existing->every(fn ($a) => $a->region !== null)) {
+            $this->splitDirection = $existing->first()->split_direction ?: 'west_east';
             $this->splitRows = $existing->map(fn ($a) => [
                 'member_id' => $a->sales_team_member_id,
                 'region' => $a->region,
+                'percent' => $a->split_percent,
             ])->values()->toArray();
         } else {
+            $this->splitDirection = 'west_east';
             $this->splitRows = [
-                ['member_id' => $this->armedMemberId, 'region' => ''],
-                ['member_id' => null, 'region' => ''],
+                ['member_id' => $this->armedMemberId, 'region' => '', 'percent' => 50],
+                ['member_id' => null, 'region' => '', 'percent' => 50],
             ];
         }
     }
 
     public function addSplitRow(): void
     {
-        $this->splitRows[] = ['member_id' => null, 'region' => ''];
+        $this->splitRows[] = ['member_id' => null, 'region' => '', 'percent' => null];
     }
 
     public function removeSplitRow(int $index): void
@@ -254,6 +266,35 @@ class TerritoryAssignmentMap extends Component
             return;
         }
 
+        if (! in_array($this->splitDirection, ['west_east', 'north_south'], true)) {
+            $this->addError('splitDirection', 'Choose a valid split direction.');
+
+            return;
+        }
+
+        $percentValues = $rows->map(fn ($r) => $r['percent'] ?? null);
+        $hasCustomPercents = $percentValues->contains(fn ($percent) => $percent !== null && $percent !== '');
+
+        if ($hasCustomPercents) {
+            $totalPercent = $percentValues->sum(fn ($percent) => (int) $percent);
+
+            if ($percentValues->contains(fn ($percent) => (int) $percent < 1) || $totalPercent !== 100) {
+                $this->addError('splitRows', 'Split percentages must be positive numbers totaling 100.');
+
+                return;
+            }
+        }
+
+        $equalPercent = intdiv(100, $rows->count());
+        $remainder = 100 - ($equalPercent * $rows->count());
+        $rows = $rows->map(function ($row, int $index) use ($hasCustomPercents, $equalPercent, $remainder) {
+            $row['percent'] = $hasCustomPercents
+                ? (int) $row['percent']
+                : $equalPercent + ($index === 0 ? $remainder : 0);
+
+            return $row;
+        });
+
         DB::transaction(function () use ($territoryCode, $rows) {
             $existing = TerritoryAssignment::query()
                 ->where('role_type', $this->activeRole)
@@ -266,7 +307,7 @@ class TerritoryAssignmentMap extends Component
                 ->where('territory_code', $territoryCode)
                 ->delete();
 
-            foreach ($rows as $row) {
+            foreach ($rows as $index => $row) {
                 $member = SalesTeamMember::find($row['member_id']);
                 if (! $member) {
                     continue;
@@ -279,6 +320,9 @@ class TerritoryAssignmentMap extends Component
                     'role_type' => $this->activeRole,
                     'territory_code' => $territoryCode,
                     'region' => trim($row['region']),
+                    'split_direction' => $this->splitDirection,
+                    'split_order' => $index + 1,
+                    'split_percent' => $row['percent'],
                     'color' => $color,
                 ]);
 
@@ -380,6 +424,9 @@ class TerritoryAssignmentMap extends Component
         $assignments = TerritoryAssignment::query()
             ->where('role_type', $this->activeRole)
             ->with('salesTeamMember')
+            ->orderBy('territory_code')
+            ->orderBy('split_order')
+            ->orderBy('id')
             ->get();
 
         $people = [];
@@ -414,6 +461,9 @@ class TerritoryAssignmentMap extends Component
                     'id' => $assignment->id,
                     'key' => $slug,
                     'region' => $assignment->region,
+                    'splitDirection' => $assignment->split_direction ?: 'west_east',
+                    'splitOrder' => $assignment->split_order,
+                    'splitPercent' => $assignment->split_percent,
                 ];
             } elseif (! isset($territories[$assignment->territory_code])) {
                 $territories[$assignment->territory_code] = [
@@ -464,6 +514,9 @@ class TerritoryAssignmentMap extends Component
                 'member_id' => $a->sales_team_member_id,
                 'name' => $a->salesTeamMember?->name ?? 'Unknown',
                 'region' => $a->region,
+                'split_direction' => $a->split_direction,
+                'split_order' => $a->split_order,
+                'split_percent' => $a->split_percent,
                 'color' => $a->color,
             ])
             ->all();

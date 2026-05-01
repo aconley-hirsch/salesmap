@@ -25,6 +25,9 @@ class TerritoryAssignmentFactory extends Factory
             'role_type' => fake()->randomElement(RoleType::cases()),
             'territory_code' => fake()->randomElement(array_keys(Territories::choices())),
             'region' => null,
+            'split_direction' => null,
+            'split_order' => null,
+            'split_percent' => null,
             'color' => fake()->hexColor(),
         ];
     }

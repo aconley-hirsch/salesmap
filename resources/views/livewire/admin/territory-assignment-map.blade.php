@@ -228,10 +228,20 @@
                     <div class="space-y-3 pt-2 border-t border-white/10">
                         <p class="text-xs uppercase tracking-wider text-paleSky/50 font-semibold">Split assignments</p>
 
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-paleSky/50 font-semibold mb-1.5">Split direction</label>
+                            <select wire:model="splitDirection"
+                                    class="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#00A599]">
+                                <option value="west_east">West to east</option>
+                                <option value="north_south">North to south</option>
+                            </select>
+                            @error('splitDirection') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+
                         @foreach($splitRows as $i => $row)
-                            <div class="flex items-center gap-2" wire:key="split-{{ $i }}">
+                            <div class="grid grid-cols-[1fr_1fr_80px_auto] items-center gap-2" wire:key="split-{{ $i }}">
                                 <select wire:model="splitRows.{{ $i }}.member_id"
-                                        class="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#00A599]">
+                                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#00A599]">
                                     <option value="">Select member...</option>
                                     @foreach($allMembers as $m)
                                         <option value="{{ $m->id }}">{{ $m->name }}</option>
@@ -239,7 +249,10 @@
                                 </select>
                                 <input type="text" wire:model="splitRows.{{ $i }}.region"
                                        placeholder="Region label"
-                                       class="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#00A599]" />
+                                       class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#00A599]" />
+                                <input type="number" min="1" max="100" wire:model="splitRows.{{ $i }}.percent"
+                                       placeholder="%"
+                                       class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#00A599]" />
                                 @if(count($splitRows) > 2)
                                     <button type="button" wire:click="removeSplitRow({{ $i }})"
                                             class="text-paleSky/40 hover:text-red-400 p-1">
