@@ -1,9 +1,27 @@
 <div class="p-6"
      x-data="{
         mapScope: 'US',
+        memberColors: @js(collect($memberCards)->mapWithKeys(fn ($card) => [$card['id'] => $card['color']])),
         setMapScope(scope) {
             this.mapScope = scope;
             if (window.AdminTerritoryMap) window.AdminTerritoryMap.setScope(scope);
+        },
+        splitPreviewGradient() {
+            const rows = ($wire.splitRows || []).filter((row) => row.member_id && row.region);
+            if (rows.length === 0) return '#1e2f48';
+            const explicit = rows.map((row) => Number(row.percent || 0));
+            const total = explicit.reduce((sum, value) => sum + value, 0);
+            const percents = total === 100 && explicit.every((value) => value > 0)
+                ? explicit
+                : rows.map((row, index) => Math.floor(100 / rows.length) + (index === 0 ? 100 - Math.floor(100 / rows.length) * rows.length : 0));
+            let offset = 0;
+            const stops = rows.flatMap((row, index) => {
+                const color = this.memberColors[row.member_id] || '#444';
+                const start = offset;
+                offset += percents[index];
+                return [`${color} ${start}%`, `${color} ${offset}%`];
+            });
+            return `linear-gradient(${90 + Number($wire.splitAngle || 0)}deg, ${stops.join(', ')})`;
         }
      }"
      x-init="
@@ -230,27 +248,45 @@
 
                         <div>
                             <label class="block text-xs uppercase tracking-wider text-paleSky/50 font-semibold mb-1.5">Split direction</label>
-                            <select wire:model="splitDirection"
+                            <select wire:model.live="splitDirection"
                                     class="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#00A599]">
                                 <option value="west_east">West to east</option>
                                 <option value="north_south">North to south</option>
+                                <option value="diagonal_down">Diagonal 45 degrees</option>
+                                <option value="diagonal_up">Diagonal 135 degrees</option>
+                                <option value="custom">Custom angle</option>
                             </select>
                             @error('splitDirection') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
 
+                        <div class="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3 items-center">
+                            <div>
+                                <div class="flex items-center justify-between gap-3 mb-1.5">
+                                    <label class="block text-xs uppercase tracking-wider text-paleSky/50 font-semibold">Angle</label>
+                                    <span class="text-xs text-paleSky/70">{{ $splitAngle }}&deg;</span>
+                                </div>
+                                <input type="range" min="0" max="180" step="5"
+                                       wire:model.live="splitAngle"
+                                       @disabled($splitDirection !== 'custom')
+                                       class="w-full accent-[#00A599] disabled:opacity-40" />
+                            </div>
+                            <div class="h-24 rounded-lg border border-white/10 overflow-hidden bg-[#1e2f48]"
+                                 x-bind:style="{ background: splitPreviewGradient() }"></div>
+                        </div>
+
                         @foreach($splitRows as $i => $row)
                             <div class="grid grid-cols-[1fr_1fr_80px_auto] items-center gap-2" wire:key="split-{{ $i }}">
-                                <select wire:model="splitRows.{{ $i }}.member_id"
+                                <select wire:model.live="splitRows.{{ $i }}.member_id"
                                         class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#00A599]">
                                     <option value="">Select member...</option>
                                     @foreach($allMembers as $m)
                                         <option value="{{ $m->id }}">{{ $m->name }}</option>
                                     @endforeach
                                 </select>
-                                <input type="text" wire:model="splitRows.{{ $i }}.region"
+                                <input type="text" wire:model.live="splitRows.{{ $i }}.region"
                                        placeholder="Region label"
                                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#00A599]" />
-                                <input type="number" min="1" max="100" wire:model="splitRows.{{ $i }}.percent"
+                                <input type="number" min="1" max="100" wire:model.live="splitRows.{{ $i }}.percent"
                                        placeholder="%"
                                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#00A599]" />
                                 @if(count($splitRows) > 2)

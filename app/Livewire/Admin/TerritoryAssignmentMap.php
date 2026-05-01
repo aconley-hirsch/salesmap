@@ -30,6 +30,8 @@ class TerritoryAssignmentMap extends Component
 
     public string $splitDirection = 'west_east';
 
+    public int $splitAngle = 0;
+
     /** @var array<int, array{member_id: ?int, region: string, percent: int|string|null}> */
     public array $splitRows = [];
 
@@ -73,6 +75,13 @@ class TerritoryAssignmentMap extends Component
         $this->armedMemberId = $this->armedMemberId === $memberId ? null : $memberId;
     }
 
+    public function updatedSplitDirection(string $direction): void
+    {
+        if ($direction !== 'custom') {
+            $this->splitAngle = $this->angleForDirection($direction);
+        }
+    }
+
     #[On('territory-clicked')]
     public function openTerritoryPopover(string $territoryCode): void
     {
@@ -85,6 +94,7 @@ class TerritoryAssignmentMap extends Component
         $this->modalSelectedMemberId = $this->armedMemberId;
         $this->splitMode = false;
         $this->splitDirection = 'west_east';
+        $this->splitAngle = 0;
         $this->splitRows = [
             ['member_id' => $this->armedMemberId, 'region' => '', 'percent' => 50],
             ['member_id' => null, 'region' => '', 'percent' => 50],
@@ -104,6 +114,7 @@ class TerritoryAssignmentMap extends Component
         $this->modalSelectedMemberId = null;
         $this->splitMode = false;
         $this->splitDirection = 'west_east';
+        $this->splitAngle = 0;
         $this->modal('territory-state-modal')->close();
     }
 
@@ -155,6 +166,7 @@ class TerritoryAssignmentMap extends Component
                 'territory_code' => $territoryCode,
                 'region' => null,
                 'split_direction' => null,
+                'split_angle' => null,
                 'split_order' => null,
                 'split_percent' => null,
                 'color' => $color,
@@ -222,6 +234,7 @@ class TerritoryAssignmentMap extends Component
 
         if ($existing->count() > 0 && $existing->every(fn ($a) => $a->region !== null)) {
             $this->splitDirection = $existing->first()->split_direction ?: 'west_east';
+            $this->splitAngle = $existing->first()->split_angle ?? $this->angleForDirection($this->splitDirection);
             $this->splitRows = $existing->map(fn ($a) => [
                 'member_id' => $a->sales_team_member_id,
                 'region' => $a->region,
@@ -229,6 +242,7 @@ class TerritoryAssignmentMap extends Component
             ])->values()->toArray();
         } else {
             $this->splitDirection = 'west_east';
+            $this->splitAngle = 0;
             $this->splitRows = [
                 ['member_id' => $this->armedMemberId, 'region' => '', 'percent' => 50],
                 ['member_id' => null, 'region' => '', 'percent' => 50],
@@ -266,11 +280,15 @@ class TerritoryAssignmentMap extends Component
             return;
         }
 
-        if (! in_array($this->splitDirection, ['west_east', 'north_south'], true)) {
+        if (! in_array($this->splitDirection, ['west_east', 'north_south', 'diagonal_down', 'diagonal_up', 'custom'], true)) {
             $this->addError('splitDirection', 'Choose a valid split direction.');
 
             return;
         }
+
+        $this->splitAngle = $this->splitDirection === 'custom'
+            ? max(0, min(180, $this->splitAngle))
+            : $this->angleForDirection($this->splitDirection);
 
         $percentValues = $rows->map(fn ($r) => $r['percent'] ?? null);
         $hasCustomPercents = $percentValues->contains(fn ($percent) => $percent !== null && $percent !== '');
@@ -321,6 +339,7 @@ class TerritoryAssignmentMap extends Component
                     'territory_code' => $territoryCode,
                     'region' => trim($row['region']),
                     'split_direction' => $this->splitDirection,
+                    'split_angle' => $this->splitAngle,
                     'split_order' => $index + 1,
                     'split_percent' => $row['percent'],
                     'color' => $color,
@@ -462,6 +481,7 @@ class TerritoryAssignmentMap extends Component
                     'key' => $slug,
                     'region' => $assignment->region,
                     'splitDirection' => $assignment->split_direction ?: 'west_east',
+                    'splitAngle' => $assignment->split_angle ?? $this->angleForDirection($assignment->split_direction ?: 'west_east'),
                     'splitOrder' => $assignment->split_order,
                     'splitPercent' => $assignment->split_percent,
                 ];
@@ -515,6 +535,7 @@ class TerritoryAssignmentMap extends Component
                 'name' => $a->salesTeamMember?->name ?? 'Unknown',
                 'region' => $a->region,
                 'split_direction' => $a->split_direction,
+                'split_angle' => $a->split_angle,
                 'split_order' => $a->split_order,
                 'split_percent' => $a->split_percent,
                 'color' => $a->color,
@@ -562,6 +583,16 @@ class TerritoryAssignmentMap extends Component
         }
 
         return SalesTeamMemberForm::PALETTE[0];
+    }
+
+    private function angleForDirection(?string $direction): int
+    {
+        return match ($direction) {
+            'north_south' => 90,
+            'diagonal_down' => 45,
+            'diagonal_up' => 135,
+            default => 0,
+        };
     }
 
     private function logAudit(

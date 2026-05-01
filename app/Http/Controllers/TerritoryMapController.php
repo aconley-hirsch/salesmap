@@ -48,6 +48,12 @@ class TerritoryMapController extends Controller
                     'key' => $slug,
                     'region' => $assignment->region,
                     'splitDirection' => $assignment->split_direction ?: 'west_east',
+                    'splitAngle' => $assignment->split_angle ?? match ($assignment->split_direction) {
+                        'north_south' => 90,
+                        'diagonal_down' => 45,
+                        'diagonal_up' => 135,
+                        default => 0,
+                    },
                     'splitOrder' => $assignment->split_order,
                     'splitPercent' => $assignment->split_percent,
                 ];

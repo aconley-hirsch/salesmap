@@ -180,7 +180,32 @@ test('saving a split stores dynamic direction order and percentages', function (
     expect($assignments)->toHaveCount(3);
     expect($assignments->pluck('region')->all())->toBe(['West TN', 'Middle TN', 'East TN']);
     expect($assignments->pluck('split_direction')->unique()->values()->all())->toBe(['west_east']);
+    expect($assignments->pluck('split_angle')->unique()->values()->all())->toBe([0]);
     expect($assignments->pluck('split_percent')->all())->toBe([30, 40, 30]);
+});
+
+test('saving a diagonal custom split stores the split angle', function () {
+    $first = SalesTeamMember::factory()->create();
+    $second = SalesTeamMember::factory()->create();
+
+    Livewire::actingAs($this->admin)
+        ->test(TerritoryAssignmentMap::class)
+        ->dispatch('territory-clicked', territoryCode: 'US-TX')
+        ->set('splitDirection', 'custom')
+        ->set('splitAngle', 45)
+        ->set('splitRows', [
+            ['member_id' => $first->id, 'region' => 'Northwest TX', 'percent' => 50],
+            ['member_id' => $second->id, 'region' => 'Southeast TX', 'percent' => 50],
+        ])
+        ->call('saveSplit');
+
+    $assignments = TerritoryAssignment::where('territory_code', 'US-TX')
+        ->where('role_type', 'rsm')
+        ->get();
+
+    expect($assignments)->toHaveCount(2);
+    expect($assignments->pluck('split_direction')->unique()->values()->all())->toBe(['custom']);
+    expect($assignments->pluck('split_angle')->unique()->values()->all())->toBe([45]);
 });
 
 test('split percentages must total one hundred when provided', function () {

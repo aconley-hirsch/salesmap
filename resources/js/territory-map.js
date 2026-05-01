@@ -277,15 +277,16 @@ function colorMap() {
     if (Array.isArray(value)) {
       const gradId = 'split-' + territory.replace(/[^a-z0-9]/gi, '-')
       const bbox = this.getBBox()
-      const direction = value.find(entry => entry.splitDirection)?.splitDirection || 'west_east'
+      const angle = Number(value.find(entry => entry.splitAngle != null)?.splitAngle ?? angleForDirection(value.find(entry => entry.splitDirection)?.splitDirection))
+      const vector = gradientVector(bbox, angle)
       const grad = defs.append('linearGradient')
         .attr('class', 'split-grad')
         .attr('id', gradId)
         .attr('gradientUnits', 'userSpaceOnUse')
-        .attr('x1', bbox.x)
-        .attr('y1', bbox.y)
-        .attr('x2', direction === 'west_east' ? bbox.x + bbox.width : bbox.x)
-        .attr('y2', direction === 'west_east' ? bbox.y : bbox.y + bbox.height)
+        .attr('x1', vector.x1)
+        .attr('y1', vector.y1)
+        .attr('x2', vector.x2)
+        .attr('y2', vector.y2)
       const percents = normalizedSplitPercents(value)
       let offset = 0
       value.forEach((entry, index) => {
@@ -312,6 +313,29 @@ function normalizedSplitPercents(entries) {
   const remainder = 100 - (equal * entries.length)
 
   return entries.map((_, index) => equal + (index === 0 ? remainder : 0))
+}
+
+function angleForDirection(direction) {
+  if (direction === 'north_south') return 90
+  if (direction === 'diagonal_down') return 45
+  if (direction === 'diagonal_up') return 135
+  return 0
+}
+
+function gradientVector(bbox, angle) {
+  const radians = angle * Math.PI / 180
+  const dx = Math.cos(radians)
+  const dy = Math.sin(radians)
+  const length = Math.abs(bbox.width * dx) + Math.abs(bbox.height * dy)
+  const cx = bbox.x + bbox.width / 2
+  const cy = bbox.y + bbox.height / 2
+
+  return {
+    x1: cx - dx * length / 2,
+    y1: cy - dy * length / 2,
+    x2: cx + dx * length / 2,
+    y2: cy + dy * length / 2,
+  }
 }
 
 function setView(view) {

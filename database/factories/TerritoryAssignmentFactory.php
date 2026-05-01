@@ -26,6 +26,7 @@ class TerritoryAssignmentFactory extends Factory
             'territory_code' => fake()->randomElement(array_keys(Territories::choices())),
             'region' => null,
             'split_direction' => null,
+            'split_angle' => null,
             'split_order' => null,
             'split_percent' => null,
             'color' => fake()->hexColor(),

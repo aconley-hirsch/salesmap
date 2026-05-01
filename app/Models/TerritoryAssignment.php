@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['sales_team_member_id', 'role_type', 'territory_code', 'region', 'split_direction', 'split_order', 'split_percent', 'color'])]
+#[Fillable(['sales_team_member_id', 'role_type', 'territory_code', 'region', 'split_direction', 'split_angle', 'split_order', 'split_percent', 'color'])]
 class TerritoryAssignment extends Model
 {
     /** @use HasFactory<TerritoryAssignmentFactory> */
@@ -19,6 +19,7 @@ class TerritoryAssignment extends Model
     {
         return [
             'role_type' => RoleType::class,
+            'split_angle' => 'integer',
             'split_order' => 'integer',
             'split_percent' => 'integer',
         ];
