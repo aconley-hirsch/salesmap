@@ -59,6 +59,9 @@
         mapScope: 'US',
         search: '',
         detailOpen: false,
+        filtersOpen: false,
+        mapLabels: { US: 'United States', Canada: 'Canada', EMEA: 'EMEA', APAC: 'APAC' },
+        roleLabels: @js(collect($mapData['roles'])->mapWithKeys(fn ($role) => [$role['key'] => $role['label']])),
         setView(view) {
             this.currentView = view;
             this.search = '';
@@ -86,8 +89,9 @@
             window.TerritoryMap.clearDetailState();
         },
         onEscape() {
-            // Esc closes the detail pane if open, otherwise clears any locked highlight
-            if (this.detailOpen) {
+            if (this.filtersOpen) {
+                this.filtersOpen = false;
+            } else if (this.detailOpen) {
                 this.closeDetail();
             } else {
                 window.TerritoryMap.clearLock();
@@ -101,7 +105,25 @@
     <x-header current="territory-map" />
 
     {{-- Controls --}}
-    <div class="flex gap-2 px-2 sm:px-6 py-3 flex-wrap items-center">
+    <div class="sm:hidden px-2 py-2">
+        <button type="button"
+                x-on:click="filtersOpen = true"
+                class="w-full flex items-center justify-between gap-3 px-3 py-2 bg-[#12213a] border border-[#2a3a4e] rounded-lg text-left shadow-sm">
+            <span class="flex min-w-0 flex-col">
+                <span class="text-[10px] uppercase tracking-wider text-paleSky/45">Filters</span>
+                <span class="truncate text-sm font-semibold text-white">
+                    <span x-text="mapLabels[mapScope]"></span>
+                    <span class="text-paleSky/35">/</span>
+                    <span x-text="roleLabels[currentView]"></span>
+                </span>
+            </span>
+            <svg class="w-5 h-5 shrink-0 text-ecoGreen" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6h16.5M6.75 12h10.5M10 18h4" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="hidden sm:flex gap-2 px-2 sm:px-6 py-3 flex-wrap items-center">
         <label class="text-xs text-paleSky/60 mr-1 hidden sm:inline">Map:</label>
         @foreach(['US' => 'United States', 'Canada' => 'Canada', 'EMEA' => 'EMEA', 'APAC' => 'APAC'] as $scope => $label)
             <button
@@ -142,6 +164,90 @@
                 placeholder="Search territory or person..."
                 class="w-full sm:w-56 pl-8 pr-3 py-2 bg-[#12213a] border border-[#2a3a4e] rounded-lg text-white text-sm placeholder-white/30 outline-none focus:border-ecoGreen"
             />
+        </div>
+    </div>
+
+    {{-- Mobile filters --}}
+    <div x-show="filtersOpen"
+         x-cloak
+         class="fixed inset-0 z-[250] sm:hidden">
+        <div class="absolute inset-0 bg-black/55" x-on:click="filtersOpen = false"></div>
+        <div x-show="filtersOpen"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="translate-y-full"
+             x-transition:enter-end="translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="translate-y-0"
+             x-transition:leave-end="translate-y-full"
+             class="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-[#2a3a4e] bg-[#101f35] p-4 shadow-2xl">
+            <div class="flex items-center justify-between gap-3 pb-3">
+                <div>
+                    <div class="text-base font-semibold text-white">Map Filters</div>
+                    <div class="text-xs text-paleSky/45">Choose a map, staff type, or search.</div>
+                </div>
+                <button type="button"
+                        x-on:click="filtersOpen = false"
+                        class="p-2 rounded-lg text-paleSky/60 hover:text-white hover:bg-white/10"
+                        aria-label="Close filters">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] uppercase tracking-wider text-paleSky/45 mb-2">Map</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach(['US' => 'United States', 'Canada' => 'Canada', 'EMEA' => 'EMEA', 'APAC' => 'APAC'] as $scope => $label)
+                            <button type="button"
+                                    x-on:click="setScope('{{ $scope }}')"
+                                    :class="mapScope === '{{ $scope }}'
+                                        ? 'bg-white text-midnightSignal border-white font-semibold'
+                                        : 'bg-[#12213a] text-paleSky/80 border-[#2a3a4e]'"
+                                    class="px-3 py-2.5 border rounded-lg text-sm transition-all">
+                                {{ $label }}
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] uppercase tracking-wider text-paleSky/45 mb-2">Staff Type</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach($mapData['roles'] as $role)
+                            <button type="button"
+                                    x-on:click="setView('{{ $role['key'] }}')"
+                                    :class="currentView === '{{ $role['key'] }}'
+                                        ? 'bg-ecoGreen text-midnightSignal border-ecoGreen font-semibold'
+                                        : 'bg-[#12213a] text-paleSky/80 border-[#2a3a4e]'"
+                                    class="px-3 py-2.5 border rounded-lg text-sm transition-all">
+                                {{ $role['label'] }}
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] uppercase tracking-wider text-paleSky/45 mb-2">Search</label>
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-paleSky/40" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                        <input type="text"
+                               x-model="search"
+                               x-on:input="onSearch(search)"
+                               placeholder="Search territory or person..."
+                               class="w-full pl-9 pr-3 py-2.5 bg-[#12213a] border border-[#2a3a4e] rounded-lg text-white text-sm placeholder-white/30 outline-none focus:border-ecoGreen" />
+                    </div>
+                </div>
+
+                <button type="button"
+                        x-on:click="filtersOpen = false"
+                        class="w-full px-4 py-2.5 bg-ecoGreen text-midnightSignal text-sm font-semibold rounded-lg">
+                    Done
+                </button>
+            </div>
         </div>
     </div>
 

@@ -1,17 +1,17 @@
 @props(['title' => null, 'subtitle' => null, 'current' => null])
 
-<header class="w-full text-sm mb-4">
-    <nav class="flex items-center justify-between w-full px-2 sm:px-6">
+<header class="w-full text-sm mb-4" x-data="{ mobileMenuOpen: false }">
+    <nav class="relative flex items-center justify-between w-full px-2 sm:px-6">
         {{-- Logo --}}
         <a href="{{ route('territory-map') }}" class="shrink-0">
-            <img src="/img/logo.png" alt="{{ config('app.name') }}" class="h-8 sm:h-10" />
+            <img src="/img/logo.png" alt="{{ config('app.name') }}" class="h-7 sm:h-10" />
         </a>
 
         {{-- Page tabs --}}
-        <div class="flex items-center gap-1" aria-label="Page navigation">
+        <div class="hidden sm:flex items-center gap-1" aria-label="Page navigation">
             <a href="{{ route('territory-map') }}"
                @class([
-                   'px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all',
+                   'px-3 py-2 rounded-lg text-sm font-semibold transition-all',
                    'bg-ecoGreen text-midnightSignal' => $current === 'territory-map',
                    'text-paleSky/70 hover:text-white hover:bg-white/10' => $current !== 'territory-map',
                ])>
@@ -19,7 +19,7 @@
             </a>
             <a href="{{ route('key-contacts') }}"
                @class([
-                   'px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all',
+                   'px-3 py-2 rounded-lg text-sm font-semibold transition-all',
                    'bg-ecoGreen text-midnightSignal' => $current === 'key-contacts',
                    'text-paleSky/70 hover:text-white hover:bg-white/10' => $current !== 'key-contacts',
                ])>
@@ -27,9 +27,61 @@
             </a>
         </div>
 
+        {{-- Mobile menu --}}
+        <button type="button"
+                class="sm:hidden p-2 rounded-lg text-paleSky hover:text-white hover:bg-white/10"
+                x-on:click="mobileMenuOpen = ! mobileMenuOpen"
+                x-on:click.outside="mobileMenuOpen = false"
+                aria-label="Open navigation menu">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path x-show="! mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" />
+                <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <div x-show="mobileMenuOpen"
+             x-cloak
+             x-transition:enter="transition ease-out duration-100"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-75"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-1"
+             class="absolute right-2 top-11 z-[300] w-52 overflow-hidden rounded-xl border border-white/15 bg-[#0a2a3d] shadow-xl shadow-black/30 sm:hidden">
+            <div class="py-2">
+                <a href="{{ route('territory-map') }}"
+                   @class([
+                       'block px-4 py-2.5 text-sm font-semibold transition-colors',
+                       'bg-ecoGreen text-midnightSignal' => $current === 'territory-map',
+                       'text-paleSky/80 hover:bg-white/10 hover:text-white' => $current !== 'territory-map',
+                   ])>
+                    Territory Map
+                </a>
+                <a href="{{ route('key-contacts') }}"
+                   @class([
+                       'block px-4 py-2.5 text-sm font-semibold transition-colors',
+                       'bg-ecoGreen text-midnightSignal' => $current === 'key-contacts',
+                       'text-paleSky/80 hover:bg-white/10 hover:text-white' => $current !== 'key-contacts',
+                   ])>
+                    Key Contacts
+                </a>
+                @if (Route::has('login'))
+                    @auth
+                        <a href="{{ route('dashboard') }}" class="block px-4 py-2.5 text-sm font-semibold text-paleSky/80 transition-colors hover:bg-white/10 hover:text-white">
+                            Admin
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="block px-4 py-2.5 text-sm font-semibold text-paleSky/80 transition-colors hover:bg-white/10 hover:text-white">
+                            Login
+                        </a>
+                    @endauth
+                @endif
+            </div>
+        </div>
+
         {{-- Admin / Login --}}
         @if (Route::has('login'))
-            <div x-data="{ open: false }" class="relative shrink-0">
+            <div x-data="{ open: false }" class="relative hidden shrink-0 sm:block">
                 <button
                     @click="open = !open"
                     @click.outside="open = false"
