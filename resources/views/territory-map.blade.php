@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-    @include('partials.head', ['title' => 'US Sales Team Territory Map'])
+    @include('partials.head', ['title' => 'Sales Team Territory Map'])
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
     @vite('resources/js/territory-map.js')
     {{-- D3-specific SVG styles that can't be expressed with Tailwind --}}
     <style>
-        .state-path {
+        .territory-shape {
             stroke: #0a1628;
             stroke-width: 1;
             cursor: pointer;
             transition: opacity 0.15s, filter 0.15s;
         }
-        .state-path:hover {
+        .territory-shape:hover {
             opacity: 0.82;
             filter: brightness(1.25);
             stroke: #fff;
             stroke-width: 1.8;
         }
-        .state-label {
+        .territory-label {
             pointer-events: none;
             fill: #fff;
             font-size: 11px;
@@ -30,7 +30,7 @@
             stroke: rgba(0, 0, 0, 0.6);
             stroke-width: 2.5px;
         }
-        .state-label.small { font-size: 9px; }
+        .territory-label.small { font-size: 9px; }
 
         /* Locked legend item — clear visual selection state */
         .tm-legend-item.tm-locked {
@@ -56,6 +56,7 @@
 <div class="min-h-screen bg-gradient-to-b from-midnightSignal to-deepTeal font-montserrat text-paleSky p-3 sm:p-6"
      x-data="{
         currentView: 'rsm',
+        mapScope: 'US',
         search: '',
         detailOpen: false,
         setView(view) {
@@ -67,6 +68,12 @@
             window.TerritoryMap.setView(view);
             // Clear any active search highlight in the JS layer too
             window.TerritoryMap.onSearch('');
+        },
+        setScope(scope) {
+            this.mapScope = scope;
+            this.search = '';
+            this.detailOpen = false;
+            window.TerritoryMap.setScope(scope);
         },
         onSearch(val) {
             window.TerritoryMap.onSearch(val);
@@ -95,6 +102,20 @@
 
     {{-- Controls --}}
     <div class="flex gap-2 px-2 sm:px-6 py-3 flex-wrap items-center">
+        <label class="text-xs text-paleSky/60 mr-1 hidden sm:inline">Map:</label>
+        @foreach(['US' => 'United States', 'Canada' => 'Canada', 'EMEA' => 'EMEA', 'APAC' => 'APAC'] as $scope => $label)
+            <button
+                @click="setScope('{{ $scope }}')"
+                :class="mapScope === '{{ $scope }}'
+                    ? 'bg-white text-midnightSignal border-white font-semibold'
+                    : 'bg-[#12213a] text-paleSky/80 border-[#2a3a4e] hover:bg-[#1a2d4a] hover:border-[#3a5a7e]'"
+                class="px-3 sm:px-4 py-2 border rounded-lg text-xs sm:text-sm transition-all cursor-pointer">
+                {{ $label }}
+            </button>
+        @endforeach
+
+        <div class="w-full sm:w-px sm:h-7 bg-[#2a3a4e] sm:mx-1"></div>
+
         <label class="text-xs text-paleSky/60 mr-1 hidden sm:inline">Color by:</label>
 
         @foreach($mapData['roles'] as $role)
@@ -118,7 +139,7 @@
                 type="text"
                 x-model="search"
                 x-on:input="onSearch(search)"
-                placeholder="Search state or person..."
+                placeholder="Search territory or person..."
                 class="w-full sm:w-56 pl-8 pr-3 py-2 bg-[#12213a] border border-[#2a3a4e] rounded-lg text-white text-sm placeholder-white/30 outline-none focus:border-ecoGreen"
             />
         </div>

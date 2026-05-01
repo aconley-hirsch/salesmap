@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'action',
     'role_type',
-    'state_code',
+    'territory_code',
     'region',
     'sales_team_member_id',
     'member_name',

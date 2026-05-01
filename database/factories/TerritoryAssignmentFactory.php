@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\RoleType;
 use App\Models\SalesTeamMember;
 use App\Models\TerritoryAssignment;
+use App\Support\Territories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,18 +20,10 @@ class TerritoryAssignmentFactory extends Factory
      */
     public function definition(): array
     {
-        $stateCodes = [
-            'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FL',
-            'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME',
-            'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH',
-            'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI',
-            'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
-        ];
-
         return [
             'sales_team_member_id' => SalesTeamMember::factory(),
             'role_type' => fake()->randomElement(RoleType::cases()),
-            'state_code' => fake()->randomElement($stateCodes),
+            'territory_code' => fake()->randomElement(array_keys(Territories::choices())),
             'region' => null,
             'color' => fake()->hexColor(),
         ];

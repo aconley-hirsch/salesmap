@@ -13,7 +13,7 @@ class TerritoryMapController extends Controller
         $assignments = TerritoryAssignment::query()
             ->with('salesTeamMember')
             ->whereHas('salesTeamMember', fn ($q) => $q->where('is_active', true))
-            ->orderBy('state_code')
+            ->orderBy('territory_code')
             ->orderBy('region')
             ->orderBy('id')
             ->get();
@@ -26,7 +26,7 @@ class TerritoryMapController extends Controller
             $member = $assignment->salesTeamMember;
             $slug = $member->slug;
             $roleType = $assignment->role_type->value;
-            $stateCode = $assignment->state_code;
+            $territoryCode = $assignment->territory_code;
 
             $people[$slug] ??= [
                 'name' => $member->name,
@@ -37,12 +37,18 @@ class TerritoryMapController extends Controller
             $colors[$roleType][$slug] = $assignment->color;
 
             if ($assignment->region) {
-                $maps[$roleType][$stateCode][] = [
+                if (isset($maps[$roleType][$territoryCode]) && ! is_array($maps[$roleType][$territoryCode])) {
+                    $maps[$roleType][$territoryCode] = [
+                        ['key' => $maps[$roleType][$territoryCode], 'region' => null],
+                    ];
+                }
+
+                $maps[$roleType][$territoryCode][] = [
                     'key' => $slug,
                     'region' => $assignment->region,
                 ];
-            } else {
-                $maps[$roleType][$stateCode] = $slug;
+            } elseif (! isset($maps[$roleType][$territoryCode])) {
+                $maps[$roleType][$territoryCode] = $slug;
             }
         }
 
@@ -54,7 +60,7 @@ class TerritoryMapController extends Controller
         return view('territory-map', [
             'mapData' => [
                 'people' => $people,
-                'maps' => $maps,
+                'territories' => $maps,
                 'colors' => $colors,
                 'roles' => $roles,
             ],

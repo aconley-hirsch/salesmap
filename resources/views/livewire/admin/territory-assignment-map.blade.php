@@ -1,5 +1,11 @@
 <div class="p-6"
-     x-data="{}"
+     x-data="{
+        mapScope: 'US',
+        setMapScope(scope) {
+            this.mapScope = scope;
+            if (window.AdminTerritoryMap) window.AdminTerritoryMap.setScope(scope);
+        }
+     }"
      x-init="
         const apply = (json) => {
             if (!json) return;
@@ -21,10 +27,10 @@
     @endassets
 
     <style>
-        #adminMapWrap .state-path {
+        #adminMapWrap .territory-shape {
             transition: opacity 0.15s, filter 0.15s;
         }
-        #adminMapWrap .state-path:hover {
+        #adminMapWrap .territory-shape:hover {
             opacity: 0.85;
             filter: brightness(1.3);
             stroke: #fff;
@@ -36,7 +42,7 @@
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-bold text-white">Territory Map Editor</h1>
-            <p class="text-paleSky/70 text-sm mt-1">Click a person to arm them, then click states to assign. Changes save instantly.</p>
+            <p class="text-paleSky/70 text-sm mt-1">Click a person to arm them, then click territories to assign. Changes save instantly.</p>
         </div>
 
         <div class="flex items-center gap-2">
@@ -64,6 +70,21 @@
                             ? 'bg-[#00A599] text-white border-[#00A599]'
                             : 'bg-white/5 text-paleSky/70 border-white/10 hover:bg-white/10 hover:text-white' }}">
                 {{ $role->label() }}
+            </button>
+        @endforeach
+    </div>
+
+    {{-- Map tabs --}}
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+        <span class="text-xs uppercase tracking-wider text-paleSky/50 font-semibold mr-1">Map</span>
+        @foreach(['US' => 'United States', 'Canada' => 'Canada', 'EMEA' => 'EMEA', 'APAC' => 'APAC'] as $scope => $label)
+            <button type="button"
+                    x-on:click="setMapScope('{{ $scope }}')"
+                    x-bind:class="mapScope === '{{ $scope }}'
+                        ? 'bg-white text-[#0c1d31] border-white'
+                        : 'bg-white/5 text-paleSky/70 border-white/10 hover:bg-white/10 hover:text-white'"
+                    class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors">
+                {{ $label }}
             </button>
         @endforeach
     </div>
@@ -123,7 +144,7 @@
                             <span class="w-4 h-4 rounded-full shrink-0" style="background: {{ $card['color'] }}"></span>
                             <div class="flex-1 min-w-0">
                                 <div class="text-sm text-white font-medium truncate">{{ $card['name'] }}</div>
-                                <div class="text-[11px] text-paleSky/50">{{ $card['state_count'] }} {{ Str::plural('state', $card['state_count']) }}</div>
+                                <div class="text-[11px] text-paleSky/50">{{ $card['territory_count'] }} {{ Str::plural('territory', $card['territory_count']) }}</div>
                             </div>
                             @if($armedMemberId === $card['id'])
                                 <svg class="w-4 h-4 text-[#00A599]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -137,29 +158,16 @@
         </div>
     </div>
 
-    {{-- State action modal --}}
+    {{-- Territory action modal --}}
     <flux:modal name="territory-state-modal" class="max-w-lg" wire:close="closeStatePopover">
-        @if($modalState)
+        @if($modalTerritory)
             @php
-                $stateNames = [
-                    'AL'=>'Alabama','AK'=>'Alaska','AZ'=>'Arizona','AR'=>'Arkansas','CA'=>'California',
-                    'CO'=>'Colorado','CT'=>'Connecticut','DE'=>'Delaware','DC'=>'District of Columbia',
-                    'FL'=>'Florida','GA'=>'Georgia','HI'=>'Hawaii','ID'=>'Idaho','IL'=>'Illinois',
-                    'IN'=>'Indiana','IA'=>'Iowa','KS'=>'Kansas','KY'=>'Kentucky','LA'=>'Louisiana',
-                    'ME'=>'Maine','MD'=>'Maryland','MA'=>'Massachusetts','MI'=>'Michigan','MN'=>'Minnesota',
-                    'MS'=>'Mississippi','MO'=>'Missouri','MT'=>'Montana','NE'=>'Nebraska','NV'=>'Nevada',
-                    'NH'=>'New Hampshire','NJ'=>'New Jersey','NM'=>'New Mexico','NY'=>'New York',
-                    'NC'=>'North Carolina','ND'=>'North Dakota','OH'=>'Ohio','OK'=>'Oklahoma','OR'=>'Oregon',
-                    'PA'=>'Pennsylvania','RI'=>'Rhode Island','SC'=>'South Carolina','SD'=>'South Dakota',
-                    'TN'=>'Tennessee','TX'=>'Texas','UT'=>'Utah','VT'=>'Vermont','VA'=>'Virginia',
-                    'WA'=>'Washington','WV'=>'West Virginia','WI'=>'Wisconsin','WY'=>'Wyoming',
-                ];
                 $armedCard = $armedMemberId ? collect($memberCards)->firstWhere('id', $armedMemberId) : null;
             @endphp
 
             <div class="space-y-5">
                 <div>
-                    <flux:heading size="lg">{{ $stateNames[$modalState] ?? $modalState }} ({{ $modalState }})</flux:heading>
+                    <flux:heading size="lg">{{ \App\Support\Territories::name($modalTerritory) }} ({{ $modalTerritory }})</flux:heading>
                     <flux:subheading>{{ \App\Enums\RoleType::from($activeRole)->label() }}</flux:subheading>
                 </div>
 
@@ -167,7 +175,7 @@
                 <div>
                     <p class="text-xs uppercase tracking-wider text-paleSky/50 font-semibold mb-2">Currently assigned</p>
                     @if(count($modalAssignments) === 0)
-                        <p class="text-sm text-paleSky/50 italic">No one assigned to this state in this discipline.</p>
+                        <p class="text-sm text-paleSky/50 italic">No one assigned to this territory in this discipline.</p>
                     @else
                         <div class="space-y-1.5">
                             @foreach($modalAssignments as $a)
@@ -179,7 +187,7 @@
                                             <div class="text-[11px] text-paleSky/60 italic">{{ $a['region'] }}</div>
                                         @endif
                                     </div>
-                                    <button type="button" wire:click="unassignFromState({{ $a['id'] }})"
+                                    <button type="button" wire:click="unassignFromTerritory({{ $a['id'] }})"
                                             class="text-paleSky/40 hover:text-red-400 transition-colors" title="Unassign">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -205,10 +213,10 @@
                             </select>
                         </div>
 
-                        <button type="button" wire:click="assignWholeState"
+                        <button type="button" wire:click="assignWholeTerritory"
                                 @disabled(! $modalSelectedMemberId)
                                 class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#00A599] hover:bg-[#00A599]/80 disabled:bg-white/10 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors">
-                            Assign whole state
+                            Assign whole territory
                         </button>
 
                         <button type="button" wire:click="enterSplitMode"
@@ -266,7 +274,7 @@
         <form wire:submit="createMember" class="space-y-5">
             <div>
                 <flux:heading size="lg">Add Sales Team Member</flux:heading>
-                <flux:subheading>They'll be added to {{ \App\Enums\RoleType::from($activeRole)->label() }} when you click their first state.</flux:subheading>
+                <flux:subheading>They'll be added to {{ \App\Enums\RoleType::from($activeRole)->label() }} when you click their first territory.</flux:subheading>
             </div>
 
             <div>

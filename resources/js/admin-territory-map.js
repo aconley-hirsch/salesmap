@@ -1,43 +1,51 @@
 // ── Admin Territory Map ──
-// Renders a single role's assignments and dispatches click events to Livewire.
+// Renders a single role's assignments and dispatches territory clicks to Livewire.
 
-const stateNames = {
-  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
-  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia',
-  FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois',
-  IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana',
-  ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota',
-  MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada',
-  NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York',
-  NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon',
-  PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota',
-  TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia',
-  WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+const territoryNames = {
+  'US-AL': 'Alabama', 'US-AK': 'Alaska', 'US-AZ': 'Arizona', 'US-AR': 'Arkansas', 'US-CA': 'California',
+  'US-CO': 'Colorado', 'US-CT': 'Connecticut', 'US-DE': 'Delaware', 'US-DC': 'District of Columbia',
+  'US-FL': 'Florida', 'US-GA': 'Georgia', 'US-HI': 'Hawaii', 'US-ID': 'Idaho', 'US-IL': 'Illinois',
+  'US-IN': 'Indiana', 'US-IA': 'Iowa', 'US-KS': 'Kansas', 'US-KY': 'Kentucky', 'US-LA': 'Louisiana',
+  'US-ME': 'Maine', 'US-MD': 'Maryland', 'US-MA': 'Massachusetts', 'US-MI': 'Michigan', 'US-MN': 'Minnesota',
+  'US-MS': 'Mississippi', 'US-MO': 'Missouri', 'US-MT': 'Montana', 'US-NE': 'Nebraska', 'US-NV': 'Nevada',
+  'US-NH': 'New Hampshire', 'US-NJ': 'New Jersey', 'US-NM': 'New Mexico', 'US-NY': 'New York',
+  'US-NC': 'North Carolina', 'US-ND': 'North Dakota', 'US-OH': 'Ohio', 'US-OK': 'Oklahoma', 'US-OR': 'Oregon',
+  'US-PA': 'Pennsylvania', 'US-RI': 'Rhode Island', 'US-SC': 'South Carolina', 'US-SD': 'South Dakota',
+  'US-TN': 'Tennessee', 'US-TX': 'Texas', 'US-UT': 'Utah', 'US-VT': 'Vermont', 'US-VA': 'Virginia',
+  'US-WA': 'Washington', 'US-WV': 'West Virginia', 'US-WI': 'Wisconsin', 'US-WY': 'Wyoming',
+  'CA-AB': 'Alberta', 'CA-BC': 'British Columbia', 'CA-MB': 'Manitoba', 'CA-NB': 'New Brunswick',
+  'CA-NL': 'Newfoundland and Labrador', 'CA-NS': 'Nova Scotia', 'CA-NT': 'Northwest Territories',
+  'CA-NU': 'Nunavut', 'CA-ON': 'Ontario', 'CA-PE': 'Prince Edward Island', 'CA-QC': 'Quebec',
+  'CA-SK': 'Saskatchewan', 'CA-YT': 'Yukon', 'REG-EMEA': 'EMEA', 'REG-APAC': 'APAC',
 }
 
-const fipsToState = {
-  '01': 'AL', '02': 'AK', '04': 'AZ', '05': 'AR', '06': 'CA', '08': 'CO',
-  '09': 'CT', 10: 'DE', 11: 'DC', 12: 'FL', 13: 'GA', 15: 'HI', 16: 'ID',
-  17: 'IL', 18: 'IN', 19: 'IA', 20: 'KS', 21: 'KY', 22: 'LA', 23: 'ME',
-  24: 'MD', 25: 'MA', 26: 'MI', 27: 'MN', 28: 'MS', 29: 'MO', 30: 'MT',
-  31: 'NE', 32: 'NV', 33: 'NH', 34: 'NJ', 35: 'NM', 36: 'NY', 37: 'NC',
-  38: 'ND', 39: 'OH', 40: 'OK', 41: 'OR', 42: 'PA', 44: 'RI', 45: 'SC',
-  46: 'SD', 47: 'TN', 48: 'TX', 49: 'UT', 50: 'VT', 51: 'VA', 53: 'WA',
-  54: 'WV', 55: 'WI', 56: 'WY',
+const fipsToTerritory = {
+  '01': 'US-AL', '02': 'US-AK', '04': 'US-AZ', '05': 'US-AR', '06': 'US-CA', '08': 'US-CO',
+  '09': 'US-CT', 10: 'US-DE', 11: 'US-DC', 12: 'US-FL', 13: 'US-GA', 15: 'US-HI', 16: 'US-ID',
+  17: 'US-IL', 18: 'US-IN', 19: 'US-IA', 20: 'US-KS', 21: 'US-KY', 22: 'US-LA', 23: 'US-ME',
+  24: 'US-MD', 25: 'US-MA', 26: 'US-MI', 27: 'US-MN', 28: 'US-MS', 29: 'US-MO', 30: 'US-MT',
+  31: 'US-NE', 32: 'US-NV', 33: 'US-NH', 34: 'US-NJ', 35: 'US-NM', 36: 'US-NY', 37: 'US-NC',
+  38: 'US-ND', 39: 'US-OH', 40: 'US-OK', 41: 'US-OR', 42: 'US-PA', 44: 'US-RI', 45: 'US-SC',
+  46: 'US-SD', 47: 'US-TN', 48: 'US-TX', 49: 'US-UT', 50: 'US-VT', 51: 'US-VA', 53: 'US-WA',
+  54: 'US-WV', 55: 'US-WI', 56: 'US-WY',
 }
+
+const smallLabels = ['US-DC', 'US-DE', 'US-CT', 'US-RI', 'US-NH', 'US-VT', 'US-MA', 'US-NJ', 'US-MD', 'US-HI', 'CA-PE']
+const globalRegions = [
+  { code: 'REG-EMEA', name: 'EMEA' },
+  { code: 'REG-APAC', name: 'APAC' },
+]
 
 let svg, defs, g, pathGen
-let stateFeatures = []
-let mapData = { people: {}, states: {}, colors: {} }
+let mapData = { people: {}, territories: {}, colors: {} }
 let pendingData = null
+let currentScope = 'US'
+let usFeatures = []
+let canadaFeatures = []
 
 async function init() {
   const wrap = document.getElementById('adminMapWrap')
   if (!wrap) return
-
-  // Reset module state — the previous body (if any) was swapped out by wire:navigate
-  // and the prior d3 selections point at detached nodes. If an SVG is already in
-  // the new wrap (full page reload), bail out.
   if (wrap.querySelector('svg')) return
 
   svg = null
@@ -46,8 +54,7 @@ async function init() {
   pathGen = null
 
   const width = 960, height = 600
-  svg = d3.select(wrap)
-    .append('svg')
+  svg = d3.select(wrap).append('svg')
     .attr('viewBox', `0 0 ${width} ${height}`)
     .style('width', '100%')
     .style('height', 'auto')
@@ -56,51 +63,21 @@ async function init() {
   defs = svg.append('defs')
   g = svg.append('g')
 
-  const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
-  stateFeatures = topojson.feature(us, us.objects.states).features
-  const projection = d3.geoAlbersUsa().fitSize([width, height], topojson.feature(us, us.objects.states))
-  pathGen = d3.geoPath().projection(projection)
+  const [us, canada] = await Promise.all([
+    d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json'),
+    d3.json('/data/canada-provinces-50m.geojson'),
+  ])
 
-  g.selectAll('path.state-path')
-    .data(stateFeatures)
-    .join('path')
-    .attr('class', 'state-path')
-    .attr('d', pathGen)
-    .attr('data-state', d => fipsToState[String(d.id).padStart(2, '0')] || '')
-    .attr('stroke', '#0a1628')
-    .attr('stroke-width', 1)
-    .style('cursor', 'pointer')
-    .on('mouseenter', (e, d) => onStateEnter(e, d))
-    .on('mousemove', e => moveTooltip(e))
-    .on('mouseleave', () => hideTooltip())
-    .on('click', (e, d) => onStateClick(e, d))
+  usFeatures = topojson.feature(us, us.objects.states).features.map(feature => ({
+    ...feature,
+    properties: {
+      ...feature.properties,
+      code: fipsToTerritory[String(feature.id).padStart(2, '0')],
+    },
+  })).filter(feature => feature.properties.code)
+  canadaFeatures = canada.features
+  renderScope()
 
-  g.selectAll('text.state-label')
-    .data(stateFeatures)
-    .join('text')
-    .attr('class', d => {
-      const st = fipsToState[String(d.id).padStart(2, '0')]
-      return 'state-label' + (['DC', 'DE', 'CT', 'RI', 'NH', 'VT', 'MA', 'NJ', 'MD', 'HI'].includes(st) ? ' small' : '')
-    })
-    .attr('x', d => pathGen.centroid(d)[0])
-    .attr('y', d => pathGen.centroid(d)[1] + 4)
-    .attr('text-anchor', 'middle')
-    .attr('fill', '#fff')
-    .attr('font-size', d => {
-      const st = fipsToState[String(d.id).padStart(2, '0')]
-      return ['DC', 'DE', 'CT', 'RI', 'NH', 'VT', 'MA', 'NJ', 'MD', 'HI'].includes(st) ? 9 : 11
-    })
-    .attr('font-weight', 600)
-    .attr('font-family', 'system-ui, sans-serif')
-    .attr('paint-order', 'stroke')
-    .attr('stroke', 'rgba(0,0,0,0.6)')
-    .attr('stroke-width', '2.5px')
-    .style('pointer-events', 'none')
-    .text(d => fipsToState[String(d.id).padStart(2, '0')] || '')
-
-  // If a render call was queued before init finished, apply the latest data now.
-  // pendingData is set if update() was called before g existed; __adminMapPending
-  // is set if Alpine x-init ran before this module finished loading.
   const queued = pendingData || window.__adminMapPending
   if (queued) {
     pendingData = null
@@ -109,24 +86,107 @@ async function init() {
   }
 }
 
+function renderScope() {
+  if (!g) return
+  g.selectAll('*').remove()
+  defs.selectAll('linearGradient.split-grad').remove()
+
+  if (currentScope === 'Canada') {
+    renderGeoScope(canadaFeatures, d3.geoMercator())
+  } else if (currentScope === 'EMEA' || currentScope === 'APAC') {
+    renderGlobalScope(globalRegions.find(region => region.name === currentScope))
+  } else {
+    renderGeoScope(usFeatures, d3.geoAlbersUsa())
+  }
+
+  recolor()
+}
+
+function renderGeoScope(features, projection) {
+  const featureCollection = { type: 'FeatureCollection', features }
+  pathGen = d3.geoPath().projection(projection.fitExtent([[18, 18], [930, 570]], featureCollection))
+
+  g.selectAll('path.territory-shape')
+    .data(features)
+    .join('path')
+    .attr('class', 'territory-shape state-path')
+    .attr('d', pathGen)
+    .attr('data-territory', d => d.properties.code)
+    .attr('stroke', '#0a1628')
+    .attr('stroke-width', 1)
+    .style('cursor', 'pointer')
+    .on('mouseenter', (e, d) => onTerritoryEnter(e, d.properties.code))
+    .on('mousemove', e => moveTooltip(e))
+    .on('mouseleave', () => hideTooltip())
+    .on('click', (e, d) => onTerritoryClick(d.properties.code))
+
+  g.selectAll('text.territory-label')
+    .data(features)
+    .join('text')
+    .attr('class', d => 'territory-label state-label' + (smallLabels.includes(d.properties.code) ? ' small' : ''))
+    .attr('x', d => pathGen.centroid(d)[0])
+    .attr('y', d => pathGen.centroid(d)[1] + 4)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#fff')
+    .attr('font-size', d => smallLabels.includes(d.properties.code) ? 9 : 11)
+    .attr('font-weight', 600)
+    .attr('font-family', 'system-ui, sans-serif')
+    .attr('paint-order', 'stroke')
+    .attr('stroke', 'rgba(0,0,0,0.6)')
+    .attr('stroke-width', '2.5px')
+    .style('pointer-events', 'none')
+    .text(d => d.properties.code.replace(/^(US|CA)-/, ''))
+}
+
+function renderGlobalScope(region) {
+  if (!region) return
+
+  const block = { ...region, x: 150, y: 120, width: 660, height: 330 }
+  g.selectAll('rect.global-region')
+    .data([block])
+    .join('rect')
+    .attr('class', 'territory-shape global-region')
+    .attr('data-territory', d => d.code)
+    .attr('x', d => d.x)
+    .attr('y', d => d.y)
+    .attr('width', d => d.width)
+    .attr('height', d => d.height)
+    .attr('rx', 10)
+    .attr('stroke', '#0a1628')
+    .attr('stroke-width', 1)
+    .style('cursor', 'pointer')
+    .on('mouseenter', (e, d) => onTerritoryEnter(e, d.code))
+    .on('mousemove', e => moveTooltip(e))
+    .on('mouseleave', () => hideTooltip())
+    .on('click', (e, d) => onTerritoryClick(d.code))
+
+  g.selectAll('text.global-label')
+    .data([block])
+    .join('text')
+    .attr('class', 'territory-label global-label')
+    .attr('x', d => d.x + d.width / 2)
+    .attr('y', d => d.y + d.height / 2 + 9)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#fff')
+    .attr('font-size', 30)
+    .attr('font-weight', 700)
+    .attr('font-family', 'system-ui, sans-serif')
+    .style('pointer-events', 'none')
+    .text(d => d.name)
+}
+
 function update(data) {
   if (!data) return
-
-  // After wire:navigate, our g reference still points at the previous (now
-  // detached) SVG node. Detect that case and fall through to the pending-queue
-  // path so init() can pick up the data once it builds a fresh SVG.
   if (g && !document.body.contains(g.node())) {
     svg = null
     defs = null
     g = null
     pathGen = null
   }
-
   if (!g) {
     pendingData = data
     return
   }
-
   mapData = data
   recolor()
 }
@@ -135,14 +195,13 @@ function recolor() {
   if (!g) return
   defs.selectAll('linearGradient.split-grad').remove()
 
-  g.selectAll('path.state-path').attr('fill', function () {
-    const st = this.getAttribute('data-state')
-    const val = mapData.states ? mapData.states[st] : null
+  g.selectAll('.territory-shape').attr('fill', function () {
+    const territory = this.getAttribute('data-territory')
+    const val = mapData.territories ? mapData.territories[territory] : null
     if (!val) return '#1e2f48'
 
     if (Array.isArray(val)) {
-      const vertical = ['TN'].includes(st)
-      const gradId = 'admin-split-' + st
+      const gradId = 'admin-split-' + territory.replace(/[^a-z0-9]/gi, '-')
       const bbox = this.getBBox()
       const grad = defs.append('linearGradient')
         .attr('class', 'split-grad')
@@ -150,10 +209,14 @@ function recolor() {
         .attr('gradientUnits', 'userSpaceOnUse')
         .attr('x1', bbox.x)
         .attr('y1', bbox.y)
-        .attr('x2', vertical ? bbox.x + bbox.width : bbox.x)
-        .attr('y2', vertical ? bbox.y : bbox.y + bbox.height)
-      grad.append('stop').attr('offset', '50%').attr('stop-color', mapData.colors[val[0].key] || '#444')
-      grad.append('stop').attr('offset', '50%').attr('stop-color', mapData.colors[val[1].key] || '#444')
+        .attr('x2', bbox.x)
+        .attr('y2', bbox.y + bbox.height)
+      const segment = 100 / val.length
+      val.forEach((entry, index) => {
+        const color = mapData.colors[entry.key] || '#444'
+        grad.append('stop').attr('offset', (index * segment) + '%').attr('stop-color', color)
+        grad.append('stop').attr('offset', ((index + 1) * segment) + '%').attr('stop-color', color)
+      })
       return `url(#${gradId})`
     }
 
@@ -161,21 +224,19 @@ function recolor() {
   })
 }
 
-function onStateEnter(e, d) {
-  const st = fipsToState[String(d.id).padStart(2, '0')]
-  if (!st) return
-  const val = mapData.states ? mapData.states[st] : null
-  let body = `<div class="font-bold text-white mb-1">${stateNames[st] || st}</div>`
+function onTerritoryEnter(e, territory) {
+  const val = mapData.territories ? mapData.territories[territory] : null
+  let body = `<div class="font-bold text-white mb-1">${territoryNames[territory] || territory}</div>`
   if (!val) {
-    body += `<div class="text-paleSky/60">Unassigned</div>`
+    body += '<div class="text-paleSky/60">Unassigned</div>'
   } else if (Array.isArray(val)) {
     val.forEach(entry => {
-      const p = mapData.people[entry.key]
-      if (p) body += `<div>${p.name}${entry.region ? ` <span class="text-paleSky/60">(${entry.region})</span>` : ''}</div>`
+      const person = mapData.people[entry.key]
+      if (person) body += `<div>${person.name}${entry.region ? ` <span class="text-paleSky/60">(${entry.region})</span>` : ''}</div>`
     })
   } else {
-    const p = mapData.people[val.key]
-    if (p) body += `<div>${p.name}</div>`
+    const person = mapData.people[val.key]
+    if (person) body += `<div>${person.name}</div>`
   }
   showTooltip(e, body)
 }
@@ -194,10 +255,8 @@ function moveTooltip(e) {
   const wrap = document.getElementById('adminMapWrap')
   if (!wrap) return
   const wrapRect = wrap.getBoundingClientRect()
-  const x = e.clientX - wrapRect.left + 12
-  const y = e.clientY - wrapRect.top + 12
-  tt.style.left = x + 'px'
-  tt.style.top = y + 'px'
+  tt.style.left = (e.clientX - wrapRect.left + 12) + 'px'
+  tt.style.top = (e.clientY - wrapRect.top + 12) + 'px'
 }
 
 function hideTooltip() {
@@ -205,16 +264,21 @@ function hideTooltip() {
   if (tt) tt.classList.add('hidden')
 }
 
-function onStateClick(e, d) {
-  const st = fipsToState[String(d.id).padStart(2, '0')]
-  if (!st) return
+function onTerritoryClick(territory) {
+  if (!territory) return
   hideTooltip()
   if (window.Livewire) {
-    window.Livewire.dispatch('state-clicked', { stateCode: st })
+    window.Livewire.dispatch('territory-clicked', { territoryCode: territory })
   }
 }
 
-window.AdminTerritoryMap = { update, init }
+function setScope(scope) {
+  currentScope = scope
+  hideTooltip()
+  renderScope()
+}
+
+window.AdminTerritoryMap = { update, init, setScope }
 
 function bootIfPresent() {
   if (document.getElementById('adminMapWrap')) {
@@ -222,11 +286,8 @@ function bootIfPresent() {
   }
 }
 
-// First page load
 document.addEventListener('livewire:initialized', bootIfPresent)
-// Subsequent SPA navigations via wire:navigate — fires on every navigation
 document.addEventListener('livewire:navigated', bootIfPresent)
-// Fallback in case the script loads after both events have already fired
 if (document.readyState !== 'loading') {
   bootIfPresent()
 }

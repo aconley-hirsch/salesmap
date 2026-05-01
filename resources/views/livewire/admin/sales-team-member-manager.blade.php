@@ -64,7 +64,7 @@
                     $firstAssignment = $member->territoryAssignments->first();
                     $memberColor = $firstAssignment?->color ?? '#7f7f7f';
                     $memberRole = $firstAssignment?->role_type;
-                    $states = $member->territoryAssignments->pluck('state_code')->unique()->sort()->values();
+                    $territories = $member->territoryAssignments->pluck('territory_code')->unique()->sort()->values();
                 @endphp
                 <div wire:key="member-{{ $member->id }}"
                      class="group bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 hover:bg-white/15 hover:border-white/30 transition-all relative">
@@ -122,13 +122,13 @@
                     </div>
 
                     {{-- Territories --}}
-                    @if($states->count() > 0)
+                    @if($territories->count() > 0)
                         <div class="flex flex-wrap gap-1">
-                            @foreach($states->take(12) as $state)
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-white/10 text-paleSky/70 rounded">{{ $state }}</span>
+                            @foreach($territories->take(12) as $territory)
+                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-white/10 text-paleSky/70 rounded">{{ $territory }}</span>
                             @endforeach
-                            @if($states->count() > 12)
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-white/5 text-paleSky/40 rounded">+{{ $states->count() - 12 }}</span>
+                            @if($territories->count() > 12)
+                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-white/5 text-paleSky/40 rounded">+{{ $territories->count() - 12 }}</span>
                             @endif
                         </div>
                     @else

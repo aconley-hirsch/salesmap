@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Enums\RoleType;
 use App\Models\SalesTeamMember;
 use App\Models\TerritoryAssignment;
+use App\Support\Territories;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -29,10 +30,10 @@ class SalesTeamMemberForm extends Component
 
     public string $color = '#09a49d';
 
-    /** @var array<int, array{id: int|null, state_code: string, region: string|null}> */
+    /** @var array<int, array{id: int|null, territory_code: string, region: string|null}> */
     public array $assignments = [];
 
-    public string $newStateCode = '';
+    public string $newTerritoryCode = '';
 
     public string $newRegion = '';
 
@@ -72,7 +73,7 @@ class SalesTeamMemberForm extends Component
             $this->assignments = $this->member->territoryAssignments
                 ->map(fn (TerritoryAssignment $a) => [
                     'id' => $a->id,
-                    'state_code' => $a->state_code,
+                    'territory_code' => $a->territory_code,
                     'region' => $a->region,
                 ])
                 ->toArray();
@@ -100,16 +101,24 @@ class SalesTeamMemberForm extends Component
     public function addAssignment(): void
     {
         $this->validate([
-            'newStateCode' => 'required|string|size:2',
+            'newTerritoryCode' => 'required|string',
         ]);
+
+        $territoryCode = Territories::normalize($this->newTerritoryCode);
+
+        if (! Territories::isValid($territoryCode)) {
+            $this->addError('newTerritoryCode', 'Select a valid territory.');
+
+            return;
+        }
 
         $this->assignments[] = [
             'id' => null,
-            'state_code' => strtoupper($this->newStateCode),
+            'territory_code' => $territoryCode,
             'region' => $this->newRegion ?: null,
         ];
 
-        $this->newStateCode = '';
+        $this->newTerritoryCode = '';
         $this->newRegion = '';
     }
 
@@ -150,15 +159,9 @@ class SalesTeamMemberForm extends Component
     }
 
     #[Computed]
-    public function stateCodes(): array
+    public function territoryChoices(): array
     {
-        return [
-            'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FL',
-            'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME',
-            'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH',
-            'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI',
-            'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
-        ];
+        return Territories::choices();
     }
 
     public function delete(): mixed
@@ -206,14 +209,14 @@ class SalesTeamMemberForm extends Component
             if ($assignment['id']) {
                 TerritoryAssignment::where('id', $assignment['id'])->update([
                     'role_type' => $this->roleType,
-                    'state_code' => $assignment['state_code'],
+                    'territory_code' => Territories::normalize($assignment['territory_code']),
                     'region' => $assignment['region'],
                     'color' => $this->color,
                 ]);
             } else {
                 $this->member->territoryAssignments()->create([
                     'role_type' => $this->roleType,
-                    'state_code' => $assignment['state_code'],
+                    'territory_code' => Territories::normalize($assignment['territory_code']),
                     'region' => $assignment['region'],
                     'color' => $this->color,
                 ]);

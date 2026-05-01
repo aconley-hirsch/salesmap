@@ -1,48 +1,58 @@
 // ── Territory Map (D3 rendering, data passed from server) ──
 
-const stateNames = {
-  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
-  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia',
-  FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois',
-  IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana',
-  ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota',
-  MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada',
-  NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York',
-  NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon',
-  PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota',
-  TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia',
-  WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+const territoryNames = {
+  'US-AL': 'Alabama', 'US-AK': 'Alaska', 'US-AZ': 'Arizona', 'US-AR': 'Arkansas', 'US-CA': 'California',
+  'US-CO': 'Colorado', 'US-CT': 'Connecticut', 'US-DE': 'Delaware', 'US-DC': 'District of Columbia',
+  'US-FL': 'Florida', 'US-GA': 'Georgia', 'US-HI': 'Hawaii', 'US-ID': 'Idaho', 'US-IL': 'Illinois',
+  'US-IN': 'Indiana', 'US-IA': 'Iowa', 'US-KS': 'Kansas', 'US-KY': 'Kentucky', 'US-LA': 'Louisiana',
+  'US-ME': 'Maine', 'US-MD': 'Maryland', 'US-MA': 'Massachusetts', 'US-MI': 'Michigan', 'US-MN': 'Minnesota',
+  'US-MS': 'Mississippi', 'US-MO': 'Missouri', 'US-MT': 'Montana', 'US-NE': 'Nebraska', 'US-NV': 'Nevada',
+  'US-NH': 'New Hampshire', 'US-NJ': 'New Jersey', 'US-NM': 'New Mexico', 'US-NY': 'New York',
+  'US-NC': 'North Carolina', 'US-ND': 'North Dakota', 'US-OH': 'Ohio', 'US-OK': 'Oklahoma', 'US-OR': 'Oregon',
+  'US-PA': 'Pennsylvania', 'US-RI': 'Rhode Island', 'US-SC': 'South Carolina', 'US-SD': 'South Dakota',
+  'US-TN': 'Tennessee', 'US-TX': 'Texas', 'US-UT': 'Utah', 'US-VT': 'Vermont', 'US-VA': 'Virginia',
+  'US-WA': 'Washington', 'US-WV': 'West Virginia', 'US-WI': 'Wisconsin', 'US-WY': 'Wyoming',
+  'CA-AB': 'Alberta', 'CA-BC': 'British Columbia', 'CA-MB': 'Manitoba', 'CA-NB': 'New Brunswick',
+  'CA-NL': 'Newfoundland and Labrador', 'CA-NS': 'Nova Scotia', 'CA-NT': 'Northwest Territories',
+  'CA-NU': 'Nunavut', 'CA-ON': 'Ontario', 'CA-PE': 'Prince Edward Island', 'CA-QC': 'Quebec',
+  'CA-SK': 'Saskatchewan', 'CA-YT': 'Yukon', 'REG-EMEA': 'EMEA', 'REG-APAC': 'APAC',
 }
 
-const fipsToState = {
-  '01': 'AL', '02': 'AK', '04': 'AZ', '05': 'AR', '06': 'CA', '08': 'CO',
-  '09': 'CT', 10: 'DE', 11: 'DC', 12: 'FL', 13: 'GA', 15: 'HI', 16: 'ID',
-  17: 'IL', 18: 'IN', 19: 'IA', 20: 'KS', 21: 'KY', 22: 'LA', 23: 'ME',
-  24: 'MD', 25: 'MA', 26: 'MI', 27: 'MN', 28: 'MS', 29: 'MO', 30: 'MT',
-  31: 'NE', 32: 'NV', 33: 'NH', 34: 'NJ', 35: 'NM', 36: 'NY', 37: 'NC',
-  38: 'ND', 39: 'OH', 40: 'OK', 41: 'OR', 42: 'PA', 44: 'RI', 45: 'SC',
-  46: 'SD', 47: 'TN', 48: 'TX', 49: 'UT', 50: 'VT', 51: 'VA', 53: 'WA',
-  54: 'WV', 55: 'WI', 56: 'WY',
+const fipsToTerritory = {
+  '01': 'US-AL', '02': 'US-AK', '04': 'US-AZ', '05': 'US-AR', '06': 'US-CA', '08': 'US-CO',
+  '09': 'US-CT', 10: 'US-DE', 11: 'US-DC', 12: 'US-FL', 13: 'US-GA', 15: 'US-HI', 16: 'US-ID',
+  17: 'US-IL', 18: 'US-IN', 19: 'US-IA', 20: 'US-KS', 21: 'US-KY', 22: 'US-LA', 23: 'US-ME',
+  24: 'US-MD', 25: 'US-MA', 26: 'US-MI', 27: 'US-MN', 28: 'US-MS', 29: 'US-MO', 30: 'US-MT',
+  31: 'US-NE', 32: 'US-NV', 33: 'US-NH', 34: 'US-NJ', 35: 'US-NM', 36: 'US-NY', 37: 'US-NC',
+  38: 'US-ND', 39: 'US-OH', 40: 'US-OK', 41: 'US-OR', 42: 'US-PA', 44: 'US-RI', 45: 'US-SC',
+  46: 'US-SD', 47: 'US-TN', 48: 'US-TX', 49: 'US-UT', 50: 'US-VT', 51: 'US-VA', 53: 'US-WA',
+  54: 'US-WV', 55: 'US-WI', 56: 'US-WY',
 }
+
+const smallLabels = ['US-DC', 'US-DE', 'US-CT', 'US-RI', 'US-NH', 'US-VT', 'US-MA', 'US-NJ', 'US-MD', 'US-HI', 'CA-PE']
+const globalRegions = [
+  { code: 'REG-EMEA', name: 'EMEA' },
+  { code: 'REG-APAC', name: 'APAC' },
+]
 
 let people = {}
-let allMaps = {}
+let allTerritories = {}
 let allColors = {}
 let allRoles = []
-
 let currentView = 'rsm'
-let stateFeatures = []
+let currentScope = 'US'
+let usFeatures = []
+let canadaFeatures = []
 let svg, defs, g, pathGen
 let isPanning = false
 let zoomStartTransform = null
 let panTimer = null
 let lockedHighlight = null
-let detailPaneState = null
+let detailPaneTerritory = null
 let isTouch = false
 
 window.addEventListener('touchstart', () => { isTouch = true }, { once: true })
 
-// ── Helpers ──
 function el(tag, className, text) {
   const node = document.createElement(tag)
   if (className) node.className = className
@@ -50,51 +60,46 @@ function el(tag, className, text) {
   return node
 }
 
-function getAllKeys(mapObj, st) {
-  const v = mapObj[st]
-  if (!v) return []
-  return Array.isArray(v) ? v.map(e => e.key) : [v]
+function getAllKeys(mapObj, territory) {
+  const value = mapObj[territory]
+  if (!value) return []
+  return Array.isArray(value) ? value.map(entry => entry.key) : [value]
 }
 
-function getStatesForKey(mapObj, key) {
-  const states = []
-  for (const [st, v] of Object.entries(mapObj)) {
-    if (Array.isArray(v)) {
-      const entry = v.find(e => e.key === key)
-      if (entry) states.push(st + ' (' + entry.region + ')')
-    } else if (v === key) {
-      states.push(st)
+function getTerritoriesForKey(mapObj, key) {
+  const territories = []
+  for (const [territory, value] of Object.entries(mapObj)) {
+    if (Array.isArray(value)) {
+      const entry = value.find(item => item.key === key)
+      if (entry) territories.push(entry.region ? territory + ' (' + entry.region + ')' : territory)
+    } else if (value === key) {
+      territories.push(territory)
     }
   }
-  return states
+  return territories
 }
 
-// Returns the per-role assignments for a state in a normalized shape so
-// tooltip and detail pane can share the iteration:
-//   [{ key, label, entries: [{ personKey, region }] }]
-function getRolesForState(st) {
+function getRolesForTerritory(territory) {
   const result = []
   allRoles.forEach(({ key, label }) => {
-    const mapObj = allMaps[key]
+    const mapObj = allTerritories[key]
     if (!mapObj) return
-    const val = mapObj[st]
-    if (!val) return
-    const entries = Array.isArray(val)
-      ? val.map(e => ({ personKey: e.key, region: e.region }))
-      : [{ personKey: val, region: null }]
+    const value = mapObj[territory]
+    if (!value) return
+    const entries = Array.isArray(value)
+      ? value.map(entry => ({ personKey: entry.key, region: entry.region }))
+      : [{ personKey: value, region: null }]
     result.push({ key, label, entries })
   })
   return result
 }
 
-// ── Init ──
 function showMapError() {
   const wrap = document.getElementById('tmMapWrap')
   if (!wrap) return
   wrap.replaceChildren()
   const box = el('div', 'aspect-[8/5] w-full flex items-center justify-center bg-[#0a1828]/40 border border-[#1e3050] rounded-xl')
   const inner = el('div', 'flex flex-col items-center gap-2 text-paleSky/70 px-6 text-center')
-  inner.appendChild(el('div', 'text-3xl', '\u26A0'))
   inner.appendChild(el('p', 'text-sm font-semibold', 'Map failed to load'))
   inner.appendChild(el('p', 'text-xs text-paleSky/50', 'Check your network connection and refresh the page.'))
   box.appendChild(inner)
@@ -104,7 +109,7 @@ function showMapError() {
 async function init() {
   const data = window.territoryMapData
   people = data.people
-  allMaps = data.maps
+  allTerritories = data.territories || {}
   allColors = data.colors
   allRoles = data.roles || []
 
@@ -132,97 +137,145 @@ async function init() {
     })
   svg.call(zoom)
   svg.node().style.touchAction = 'none'
+  svg.on('dblclick.zoom', () => svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity))
 
-  svg.on('dblclick.zoom', () => {
-    svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity)
-  })
-
-  let us
+  let us, canada
   try {
-    us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
+    ;[us, canada] = await Promise.all([
+      d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json'),
+      d3.json('/data/canada-provinces-50m.geojson'),
+    ])
   } catch (err) {
-    console.error('Failed to load US atlas TopoJSON', err)
+    console.error('Failed to load territory map data', err)
     svg.remove()
     showMapError()
     return
   }
 
-  // Map data loaded — drop the loading placeholder
   const placeholder = document.getElementById('tmMapPlaceholder')
   if (placeholder) placeholder.remove()
 
-  stateFeatures = topojson.feature(us, us.objects.states).features
-  const projection = d3.geoAlbersUsa().fitSize([width, height], topojson.feature(us, us.objects.states))
-  pathGen = d3.geoPath().projection(projection)
+  usFeatures = topojson.feature(us, us.objects.states).features.map(feature => ({
+    ...feature,
+    properties: {
+      ...feature.properties,
+      code: fipsToTerritory[String(feature.id).padStart(2, '0')],
+    },
+  })).filter(feature => feature.properties.code)
 
-  g.selectAll('path.state-path')
-    .data(stateFeatures)
-    .join('path')
-    .attr('class', 'state-path')
-    .attr('d', pathGen)
-    .attr('data-fips', d => String(d.id).padStart(2, '0'))
-    .attr('data-state', d => fipsToState[String(d.id).padStart(2, '0')] || '')
-    .on('mouseenter', (e, d) => { if (!isPanning) onStateEnter(e, d) })
-    .on('mousemove', e => { if (!isPanning && !detailPaneState) moveTooltip(e) })
-    .on('mouseleave', () => { if (!isPanning) hideTooltip() })
-    .on('click', (e, d) => { if (!isPanning) onStateTap(e, d) })
-
-  g.selectAll('text.state-label')
-    .data(stateFeatures)
-    .join('text')
-    .attr('class', d => {
-      const st = fipsToState[String(d.id).padStart(2, '0')]
-      return 'state-label' + (['DC', 'DE', 'CT', 'RI', 'NH', 'VT', 'MA', 'NJ', 'MD', 'HI'].includes(st) ? ' small' : '')
-    })
-    .attr('x', d => pathGen.centroid(d)[0])
-    .attr('y', d => pathGen.centroid(d)[1] + 4)
-    .text(d => fipsToState[String(d.id).padStart(2, '0')] || '')
-
-  colorMap()
+  canadaFeatures = canada.features
+  renderScope()
   renderLegend()
 }
 
-function onStateEnter(e, d) {
-  if (isTouch || detailPaneState) return
-  const st = fipsToState[String(d.id).padStart(2, '0')]
-  if (st) showTooltip(e, st)
+function renderScope() {
+  if (!g) return
+  g.selectAll('*').remove()
+  defs.selectAll('linearGradient.split-grad').remove()
+
+  if (currentScope === 'Canada') {
+    renderGeoScope(canadaFeatures, d3.geoMercator())
+  } else if (currentScope === 'EMEA' || currentScope === 'APAC') {
+    renderGlobalScope(globalRegions.find(region => region.name === currentScope))
+  } else {
+    renderGeoScope(usFeatures, d3.geoAlbersUsa())
+  }
+
+  colorMap()
+  resetHighlight()
 }
 
-function onStateTap(e, d) {
+function renderGeoScope(features, projection) {
+  const featureCollection = { type: 'FeatureCollection', features }
+  pathGen = d3.geoPath().projection(projection.fitExtent([[18, 18], [930, 570]], featureCollection))
+
+  g.selectAll('path.territory-shape')
+    .data(features)
+    .join('path')
+    .attr('class', 'territory-shape state-path')
+    .attr('d', pathGen)
+    .attr('data-territory', d => d.properties.code)
+    .on('mouseenter', (e, d) => { if (!isPanning) onTerritoryEnter(e, d.properties.code) })
+    .on('mousemove', e => { if (!isPanning && !detailPaneTerritory) moveTooltip(e) })
+    .on('mouseleave', () => { if (!isPanning) hideTooltip() })
+    .on('click', (e, d) => { if (!isPanning) onTerritoryTap(e, d.properties.code) })
+
+  g.selectAll('text.territory-label')
+    .data(features)
+    .join('text')
+    .attr('class', d => 'territory-label state-label' + (smallLabels.includes(d.properties.code) ? ' small' : ''))
+    .attr('x', d => pathGen.centroid(d)[0])
+    .attr('y', d => pathGen.centroid(d)[1] + 4)
+    .text(d => d.properties.code.replace(/^(US|CA)-/, ''))
+}
+
+function renderGlobalScope(region) {
+  if (!region) return
+
+  const block = { ...region, x: 150, y: 120, width: 660, height: 330 }
+  g.selectAll('rect.global-region')
+    .data([block])
+    .join('rect')
+    .attr('class', 'territory-shape global-region')
+    .attr('data-territory', d => d.code)
+    .attr('x', d => d.x)
+    .attr('y', d => d.y)
+    .attr('width', d => d.width)
+    .attr('height', d => d.height)
+    .attr('rx', 10)
+    .on('mouseenter', (e, d) => { if (!isPanning) onTerritoryEnter(e, d.code) })
+    .on('mousemove', e => { if (!isPanning && !detailPaneTerritory) moveTooltip(e) })
+    .on('mouseleave', () => { if (!isPanning) hideTooltip() })
+    .on('click', (e, d) => { if (!isPanning) onTerritoryTap(e, d.code) })
+
+  g.selectAll('text.global-label')
+    .data([block])
+    .join('text')
+    .attr('class', 'territory-label global-label')
+    .attr('x', d => d.x + d.width / 2)
+    .attr('y', d => d.y + d.height / 2 + 9)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#fff')
+    .attr('font-size', 30)
+    .attr('font-weight', 700)
+    .attr('font-family', 'system-ui, sans-serif')
+    .style('pointer-events', 'none')
+    .text(d => d.name)
+}
+
+function onTerritoryEnter(e, territory) {
+  if (isTouch || detailPaneTerritory) return
+  if (territory) showTooltip(e, territory)
+}
+
+function onTerritoryTap(e, territory) {
   e.stopPropagation()
-  const st = fipsToState[String(d.id).padStart(2, '0')]
-  if (!st) return
+  if (!territory) return
   hideTooltip()
-  // Clicking a state ends any focus-on-one-rep selection so the user can see
-  // the full map state context for the chosen state.
   if (lockedHighlight) {
     lockedHighlight = null
     resetHighlight()
     renderLegend()
   }
-  if (detailPaneState === st) {
+  if (detailPaneTerritory === territory) {
     closeDetailPane()
   } else {
-    showDetailPane(st)
+    showDetailPane(territory)
   }
 }
 
-// ── Coloring ──
 function colorMap() {
-  const mapObj = allMaps[currentView]
-  const colors = allColors[currentView]
-  if (!mapObj || !colors) return
+  const mapObj = allTerritories[currentView] || {}
+  const colors = allColors[currentView] || {}
 
   defs.selectAll('linearGradient.split-grad').remove()
+  g.selectAll('.territory-shape').attr('fill', function () {
+    const territory = this.getAttribute('data-territory')
+    const value = mapObj[territory]
+    if (!value) return '#222'
 
-  g.selectAll('path.state-path').attr('fill', function () {
-    const st = this.getAttribute('data-state')
-    const val = mapObj[st]
-    if (!val) return '#222'
-
-    if (Array.isArray(val)) {
-      const vertical = ['TN'].includes(st)
-      const gradId = 'split-' + st
+    if (Array.isArray(value)) {
+      const gradId = 'split-' + territory.replace(/[^a-z0-9]/gi, '-')
       const bbox = this.getBBox()
       const grad = defs.append('linearGradient')
         .attr('class', 'split-grad')
@@ -230,58 +283,60 @@ function colorMap() {
         .attr('gradientUnits', 'userSpaceOnUse')
         .attr('x1', bbox.x)
         .attr('y1', bbox.y)
-        .attr('x2', vertical ? bbox.x + bbox.width : bbox.x)
-        .attr('y2', vertical ? bbox.y : bbox.y + bbox.height)
-
-      // Distribute hard stops evenly across N regions
-      const segment = 100 / val.length
-      val.forEach((entry, i) => {
+        .attr('x2', bbox.x)
+        .attr('y2', bbox.y + bbox.height)
+      const segment = 100 / value.length
+      value.forEach((entry, index) => {
         const color = colors[entry.key] || '#333'
-        grad.append('stop').attr('offset', (i * segment) + '%').attr('stop-color', color)
-        grad.append('stop').attr('offset', ((i + 1) * segment) + '%').attr('stop-color', color)
+        grad.append('stop').attr('offset', (index * segment) + '%').attr('stop-color', color)
+        grad.append('stop').attr('offset', ((index + 1) * segment) + '%').attr('stop-color', color)
       })
       return `url(#${gradId})`
     }
-    return colors[val] || '#333'
+    return colors[value] || '#333'
   })
 }
 
-// ── Public API for Alpine ──
-function setView(v) {
+function setView(view) {
   lockedHighlight = null
-  currentView = v
+  currentView = view
   colorMap()
   renderLegend()
   resetHighlight()
 }
 
-// ── Legend ──
+function setScope(scope) {
+  lockedHighlight = null
+  detailPaneTerritory = null
+  currentScope = scope
+  closeDetailPane()
+  renderScope()
+  renderLegend()
+}
+
 function renderLegend() {
   const legend = document.getElementById('tmLegend')
   legend.replaceChildren()
 
-  const mapObj = allMaps[currentView]
-  const colors = allColors[currentView]
-  if (!mapObj || !colors) return
+  const mapObj = allTerritories[currentView] || {}
+  const colors = allColors[currentView] || {}
 
-  // Collect unique people referenced in this role's map
   const seen = new Set()
   const entries = []
-  for (const [, val] of Object.entries(mapObj)) {
-    const keys = Array.isArray(val) ? val.map(e => e.key) : [val]
+  for (const [, value] of Object.entries(mapObj)) {
+    const keys = Array.isArray(value) ? value.map(entry => entry.key) : [value]
     keys.forEach(key => {
       if (!seen.has(key)) {
         seen.add(key)
-        entries.push({ key, states: getStatesForKey(mapObj, key) })
+        entries.push({ key, territories: getTerritoriesForKey(mapObj, key) })
       }
     })
   }
   entries.sort((a, b) => (people[a.key]?.name || '').localeCompare(people[b.key]?.name || ''))
 
-  const roleLabel = (allRoles.find(r => r.key === currentView) || {}).label || currentView
+  const roleLabel = (allRoles.find(role => role.key === currentView) || {}).label || currentView
   legend.appendChild(el('h3', 'text-sm mb-3.5 text-ecoGreen uppercase tracking-wider', roleLabel))
 
-  // Filter chip when a legend item is locked — gives the user an obvious way out
   if (lockedHighlight && people[lockedHighlight]) {
     const chip = el('button', 'w-full mb-3 flex items-center justify-between gap-2 px-3 py-2 bg-ecoGreen/15 border border-ecoGreen/60 rounded-md text-left hover:bg-ecoGreen/25 transition-colors')
     chip.setAttribute('type', 'button')
@@ -290,16 +345,15 @@ function renderLegend() {
     label.appendChild(document.createTextNode('Showing only '))
     label.appendChild(el('span', 'font-semibold', people[lockedHighlight].name))
     chip.appendChild(label)
-    chip.appendChild(el('span', 'text-ecoGreen text-base leading-none', '\u00D7'))
+    chip.appendChild(el('span', 'text-ecoGreen text-base leading-none', 'x'))
     chip.addEventListener('click', () => clearLock())
     legend.appendChild(chip)
   }
 
-  entries.forEach(({ key, states }) => {
-    const p = people[key]
-    if (!p) return
+  entries.forEach(({ key, territories }) => {
+    const person = people[key]
+    if (!person) return
     const color = colors[key] || '#444'
-
     const item = el('div', 'flex items-start gap-2.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors hover:bg-[#1a2d4a] mb-0.5 tm-legend-item')
     item.dataset.key = key
     if (lockedHighlight === key) item.classList.add('tm-locked')
@@ -309,27 +363,19 @@ function renderLegend() {
     item.appendChild(swatch)
 
     const info = el('div', 'flex-1 min-w-0')
-    info.appendChild(el('div', 'text-[13px] font-semibold text-white', p.name))
-    if (p.email) info.appendChild(el('div', 'text-[11px] text-[#6688aa] mt-px', p.email))
-    if (p.phone) info.appendChild(el('div', 'text-[11px] text-[#6688aa] mt-px', p.phone))
-    info.appendChild(el('div', 'text-[11px] text-paleSky/30 mt-0.5', states.join(', ')))
+    info.appendChild(el('div', 'text-[13px] font-semibold text-white', person.name))
+    if (person.email) info.appendChild(el('div', 'text-[11px] text-[#6688aa] mt-px', person.email))
+    if (person.phone) info.appendChild(el('div', 'text-[11px] text-[#6688aa] mt-px', person.phone))
+    info.appendChild(el('div', 'text-[11px] text-paleSky/30 mt-0.5', territories.join(', ')))
     item.appendChild(info)
 
-    // When something is locked, hover is disabled so the user's selection
-    // isn't visually overridden every time the cursor crosses another row.
-    item.addEventListener('mouseenter', () => {
-      if (!lockedHighlight) highlightTerritory(key)
-    })
-    item.addEventListener('mouseleave', () => {
-      if (!lockedHighlight) resetHighlight()
-    })
+    item.addEventListener('mouseenter', () => { if (!lockedHighlight) highlightTerritory(key) })
+    item.addEventListener('mouseleave', () => { if (!lockedHighlight) resetHighlight() })
     item.addEventListener('click', () => toggleHighlight(key))
-
     legend.appendChild(item)
   })
 }
 
-// ── Highlighting ──
 function toggleHighlight(key) {
   if (lockedHighlight === key) {
     lockedHighlight = null
@@ -350,10 +396,10 @@ function clearLock() {
 }
 
 function highlightTerritory(key) {
-  const mapObj = allMaps[currentView]
-  g.selectAll('path.state-path').each(function () {
-    const st = this.getAttribute('data-state')
-    const keys = getAllKeys(mapObj, st)
+  const mapObj = allTerritories[currentView] || {}
+  g.selectAll('.territory-shape').each(function () {
+    const territory = this.getAttribute('data-territory')
+    const keys = getAllKeys(mapObj, territory)
     const match = keys.includes(key)
     d3.select(this)
       .style('opacity', match ? 1 : 0.2)
@@ -361,35 +407,34 @@ function highlightTerritory(key) {
       .style('stroke', match ? '#fff' : '#0a1628')
       .style('stroke-width', match ? 2 : 1)
   })
-  document.querySelectorAll('.tm-legend-item').forEach(el => {
-    el.classList.toggle('highlight', el.dataset.key === key)
+  document.querySelectorAll('.tm-legend-item').forEach(item => {
+    item.classList.toggle('highlight', item.dataset.key === key)
   })
 }
 
 function resetHighlight() {
   if (lockedHighlight) return
-  g.selectAll('path.state-path')
+  g.selectAll('.territory-shape')
     .style('opacity', null)
     .style('filter', null)
     .style('stroke', null)
     .style('stroke-width', null)
-  document.querySelectorAll('.tm-legend-item').forEach(el => el.classList.remove('highlight'))
+  document.querySelectorAll('.tm-legend-item').forEach(item => item.classList.remove('highlight'))
 }
 
-// ── Tooltip ──
-function showTooltip(e, st) {
+function showTooltip(e, territory) {
   const tt = document.getElementById('tmTooltip')
   tt.replaceChildren()
+  tt.appendChild(el('div', 'text-xl font-bold mb-3', `${territoryNames[territory] || territory} (${territory})`))
 
-  tt.appendChild(el('div', 'text-xl font-bold mb-3', `${stateNames[st] || st} (${st})`))
-
-  getRolesForState(st).forEach(({ label, entries }) => {
+  getRolesForTerritory(territory).forEach(({ label, entries }) => {
     entries.forEach(entry => {
-      const p = people[entry.personKey]
-      if (!p) return
+      const person = people[entry.personKey]
+      if (!person) return
       const wrap = el('div', 'mb-2.5 last:mb-0')
       wrap.appendChild(el('div', 'text-[10px] uppercase tracking-widest text-ecoGreen mb-0.5', label))
-      wrap.appendChild(el('div', 'text-[15px] font-semibold', p.name))
+      wrap.appendChild(el('div', 'text-[15px] font-semibold', person.name))
+      if (entry.region) wrap.appendChild(el('div', 'text-[11px] text-ecoGreen italic', entry.region))
       tt.appendChild(wrap)
     })
   })
@@ -402,7 +447,8 @@ function moveTooltip(e) {
   if (window.innerWidth <= 768) return
   const tt = document.getElementById('tmTooltip')
   const rect = tt.getBoundingClientRect()
-  let x = e.clientX + 16, y = e.clientY + 16
+  let x = e.clientX + 16
+  let y = e.clientY + 16
   if (x + rect.width > window.innerWidth - 10) x = e.clientX - rect.width - 16
   if (y + rect.height > window.innerHeight - 10) y = e.clientY - rect.height - 16
   tt.style.left = x + 'px'
@@ -413,81 +459,70 @@ function hideTooltip() {
   document.getElementById('tmTooltip').style.display = 'none'
 }
 
-// ── Detail pane ──
 function getTerritoriesForPerson(personKey) {
   const territories = []
   allRoles.forEach(({ key, label }) => {
-    const mapObj = allMaps[key]
+    const mapObj = allTerritories[key]
     if (!mapObj) return
-    for (const [st, val] of Object.entries(mapObj)) {
-      if (Array.isArray(val)) {
-        val.forEach(entry => {
-          if (entry.key === personKey) territories.push({ st, label, region: entry.region })
+    for (const [territory, value] of Object.entries(mapObj)) {
+      if (Array.isArray(value)) {
+        value.forEach(entry => {
+          if (entry.key === personKey) territories.push({ territory, label, region: entry.region })
         })
-      } else if (val === personKey) {
-        territories.push({ st, label })
+      } else if (value === personKey) {
+        territories.push({ territory, label })
       }
     }
   })
   return territories
 }
 
-function buildDetailElement(st) {
+function buildDetailElement(territory) {
   const wrap = document.createDocumentFragment()
-
-  // Header
   const header = el('div', 'px-6 pt-5 pb-4 border-b border-[#1e3050] flex justify-between items-start sticky top-0 bg-[#101f35] z-10')
-  header.appendChild(el('div', 'text-[22px] font-bold', `${stateNames[st] || st} (${st})`))
+  header.appendChild(el('div', 'text-[22px] font-bold', `${territoryNames[territory] || territory} (${territory})`))
 
-  const closeBtn = el('button', 'text-[#8899aa] text-2xl cursor-pointer leading-none pl-3 hover:text-white border-none bg-transparent', '\u00D7')
+  const closeBtn = el('button', 'text-[#8899aa] text-2xl cursor-pointer leading-none pl-3 hover:text-white border-none bg-transparent', 'x')
   closeBtn.setAttribute('aria-label', 'Close details')
   closeBtn.addEventListener('click', () => window.dispatchEvent(new CustomEvent('close-detail')))
   header.appendChild(closeBtn)
   wrap.appendChild(header)
 
-  // Body
   const body = el('div', 'px-6 pt-2 pb-6 flex-1')
-
-  getRolesForState(st).forEach(({ label, entries }) => {
+  getRolesForTerritory(territory).forEach(({ label, entries }) => {
     const section = el('div', 'mb-5 last:mb-0')
     section.appendChild(el('div', 'text-[10px] uppercase tracking-widest text-ecoGreen mb-2 pb-1 border-b border-[#1e3050]', label))
 
     entries.forEach(entry => {
-      const p = people[entry.personKey]
-      if (!p) return
-
+      const person = people[entry.personKey]
+      if (!person) return
       const personWrap = el('div', 'mb-3.5 last:mb-0')
+      if (entry.region) personWrap.appendChild(el('div', 'text-[11px] text-ecoGreen italic mb-0.5', entry.region))
+      personWrap.appendChild(el('div', 'text-base font-semibold mb-1', person.name))
 
-      if (entry.region) {
-        personWrap.appendChild(el('div', 'text-[11px] text-ecoGreen italic mb-0.5', entry.region))
-      }
-      personWrap.appendChild(el('div', 'text-base font-semibold mb-1', p.name))
-
-      if (p.email) {
+      if (person.email) {
         const emailDiv = el('div', 'text-[13px] text-[#8899aa] mt-1')
-        emailDiv.appendChild(document.createTextNode('\u2709 '))
-        const link = el('a', 'text-[#8899aa] no-underline hover:text-ecoGreen hover:underline', p.email)
-        link.href = 'mailto:' + p.email
+        const link = el('a', 'text-[#8899aa] no-underline hover:text-ecoGreen hover:underline', person.email)
+        link.href = 'mailto:' + person.email
         emailDiv.appendChild(link)
         personWrap.appendChild(emailDiv)
       }
-      if (p.phone) {
+      if (person.phone) {
         const phoneDiv = el('div', 'text-[13px] text-[#8899aa] mt-1')
-        phoneDiv.appendChild(document.createTextNode('\u260E '))
-        const link = el('a', 'text-[#8899aa] no-underline hover:text-ecoGreen hover:underline', p.phone)
-        link.href = 'tel:' + p.phone.replace(/[^+\d]/g, '')
+        const link = el('a', 'text-[#8899aa] no-underline hover:text-ecoGreen hover:underline', person.phone)
+        link.href = 'tel:' + person.phone.replace(/[^+\d]/g, '')
         phoneDiv.appendChild(link)
         personWrap.appendChild(phoneDiv)
       }
 
-      // Other territories
-      const allTerritories = getTerritoriesForPerson(entry.personKey)
-      const otherStates = [...new Set(allTerritories.filter(t => t.st !== st).map(t => t.st))]
-      if (otherStates.length > 0) {
-        const terr = el('div', 'mt-2')
-        terr.appendChild(el('div', 'text-[10px] uppercase tracking-wider text-paleSky/30 mb-1', 'Other territories'))
-        terr.appendChild(el('div', 'text-xs text-[#6688aa] leading-relaxed', otherStates.join(', ')))
-        personWrap.appendChild(terr)
+      const otherTerritories = [...new Set(getTerritoriesForPerson(entry.personKey)
+        .filter(item => item.territory !== territory)
+        .map(item => item.territory))]
+      if (otherTerritories.length > 0) {
+        const territoryList = el('div', 'mt-2')
+        territoryList.appendChild(el('div', 'text-[10px] uppercase tracking-wider text-paleSky/30 mb-1', 'Other territories'))
+        territoryList.appendChild(el('div', 'text-xs text-[#6688aa] leading-relaxed', otherTerritories.join(', ')))
+        personWrap.appendChild(territoryList)
       }
 
       section.appendChild(personWrap)
@@ -500,85 +535,83 @@ function buildDetailElement(st) {
   return wrap
 }
 
-function showDetailPane(st) {
+function showDetailPane(territory) {
   hideTooltip()
   const target = document.getElementById('tmDetailPane')
-  if (target) target.replaceChildren(buildDetailElement(st))
-  detailPaneState = st
+  if (target) target.replaceChildren(buildDetailElement(territory))
+  detailPaneTerritory = territory
   window.dispatchEvent(new CustomEvent('open-detail'))
 }
 
 function closeDetailPane() {
-  detailPaneState = null
+  detailPaneTerritory = null
   window.dispatchEvent(new CustomEvent('close-detail'))
 }
 
 function clearDetailState() {
-  detailPaneState = null
+  detailPaneTerritory = null
 }
 
-// ── Search (called from Alpine) ──
 function showNoResults(query) {
   const legend = document.getElementById('tmLegend')
   if (!legend) return
   legend.replaceChildren()
   legend.appendChild(el('h3', 'text-sm mb-3.5 text-ecoGreen uppercase tracking-wider', 'No results'))
   const wrap = el('div', 'flex flex-col items-center text-center gap-2 py-4 text-paleSky/70')
-  wrap.appendChild(el('div', 'text-2xl', '\u{1F50D}'))
-  wrap.appendChild(el('p', 'text-sm', `No states or people match "${query}"`))
-  wrap.appendChild(el('p', 'text-[11px] text-paleSky/40', 'Try a state name or a sales rep\u2019s first or last name.'))
+  wrap.appendChild(el('p', 'text-sm', `No territories or people match "${query}"`))
+  wrap.appendChild(el('p', 'text-[11px] text-paleSky/40', 'Try a territory name or a sales rep name.'))
   legend.appendChild(wrap)
 }
 
-function onSearch(val) {
+function onSearch(value) {
   lockedHighlight = null
-  val = val.trim()
-  if (!val) { resetHighlight(); renderLegend(); return }
+  value = value.trim()
+  if (!value) {
+    resetHighlight()
+    renderLegend()
+    return
+  }
 
-  const lower = val.toLowerCase()
-  const mapObj = allMaps[currentView]
+  const lower = value.toLowerCase()
+  const mapObj = allTerritories[currentView] || {}
   const matchedKeys = new Set()
 
-  for (const [st, name] of Object.entries(stateNames)) {
-    if (st.toLowerCase().includes(lower) || name.toLowerCase().includes(lower)) {
-      getAllKeys(mapObj, st).forEach(k => matchedKeys.add(k))
+  for (const [territory, name] of Object.entries(territoryNames)) {
+    if (territory.toLowerCase().includes(lower) || name.toLowerCase().includes(lower)) {
+      getAllKeys(mapObj, territory).forEach(key => matchedKeys.add(key))
     }
   }
-  for (const [key, p] of Object.entries(people)) {
-    if (p.name.toLowerCase().includes(lower)) matchedKeys.add(key)
+  for (const [key, person] of Object.entries(people)) {
+    if (person.name.toLowerCase().includes(lower)) matchedKeys.add(key)
   }
 
   if (matchedKeys.size === 0) {
-    // Distinguish "zero matches" from "empty search" by dimming everything
-    g.selectAll('path.state-path')
+    g.selectAll('.territory-shape')
       .style('opacity', 0.15)
       .style('filter', 'none')
       .style('stroke', '#0a1628')
       .style('stroke-width', 1)
-    showNoResults(val)
+    showNoResults(value)
     return
   }
 
-  // Re-render the legend in case it was previously showing the no-results state
   renderLegend()
-
-  g.selectAll('path.state-path').each(function () {
-    const st = this.getAttribute('data-state')
-    const keys = getAllKeys(mapObj, st)
-    const match = keys.some(k => matchedKeys.has(k))
+  g.selectAll('.territory-shape').each(function () {
+    const territory = this.getAttribute('data-territory')
+    const keys = getAllKeys(mapObj, territory)
+    const match = keys.some(key => matchedKeys.has(key))
     d3.select(this)
       .style('opacity', match ? 1 : 0.2)
       .style('filter', match ? 'brightness(1.3)' : 'none')
       .style('stroke', match ? '#fff' : '#0a1628')
       .style('stroke-width', match ? 2 : 1)
   })
-  document.querySelectorAll('.tm-legend-item').forEach(el => {
-    el.classList.toggle('highlight', matchedKeys.has(el.dataset.key))
+  document.querySelectorAll('.tm-legend-item').forEach(item => {
+    item.classList.toggle('highlight', matchedKeys.has(item.dataset.key))
   })
 }
 
-// Expose API for Alpine to call
-window.TerritoryMap = { setView, onSearch, clearDetailState, clearLock }
+window.TerritoryMap = { setView, setScope, onSearch, clearDetailState, clearLock }
 
 init().catch(err => {
   console.error('Territory map init failed', err)

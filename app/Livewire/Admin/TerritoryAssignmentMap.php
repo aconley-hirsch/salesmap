@@ -6,6 +6,7 @@ use App\Enums\RoleType;
 use App\Models\SalesTeamMember;
 use App\Models\TerritoryAssignment;
 use App\Models\TerritoryAssignmentAudit;
+use App\Support\Territories;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -19,7 +20,7 @@ class TerritoryAssignmentMap extends Component
 
     public ?int $armedMemberId = null;
 
-    public ?string $modalState = null;
+    public ?string $modalTerritory = null;
 
     public ?int $modalSelectedMemberId = null;
 
@@ -70,10 +71,15 @@ class TerritoryAssignmentMap extends Component
         $this->armedMemberId = $this->armedMemberId === $memberId ? null : $memberId;
     }
 
-    #[On('state-clicked')]
-    public function openStatePopover(string $stateCode): void
+    #[On('territory-clicked')]
+    public function openTerritoryPopover(string $territoryCode): void
     {
-        $this->modalState = strtoupper($stateCode);
+        $territoryCode = Territories::normalize($territoryCode);
+        if (! Territories::isValid($territoryCode)) {
+            return;
+        }
+
+        $this->modalTerritory = $territoryCode;
         $this->modalSelectedMemberId = $this->armedMemberId;
         $this->splitMode = false;
         $this->splitRows = [
@@ -83,19 +89,25 @@ class TerritoryAssignmentMap extends Component
         $this->modal('territory-state-modal')->show();
     }
 
+    #[On('state-clicked')]
+    public function openStatePopover(string $stateCode): void
+    {
+        $this->openTerritoryPopover($stateCode);
+    }
+
     public function closeStatePopover(): void
     {
-        $this->modalState = null;
+        $this->modalTerritory = null;
         $this->modalSelectedMemberId = null;
         $this->splitMode = false;
         $this->modal('territory-state-modal')->close();
     }
 
-    public function assignWholeState(): void
+    public function assignWholeTerritory(): void
     {
         $memberId = $this->modalSelectedMemberId ?? $this->armedMemberId;
 
-        if (! $this->modalState || ! $memberId) {
+        if (! $this->modalTerritory || ! $memberId) {
             return;
         }
 
@@ -107,13 +119,13 @@ class TerritoryAssignmentMap extends Component
         // Persist the picked member as the armed selection so subsequent clicks paint with them
         $this->armedMemberId = $member->id;
 
-        $stateCode = $this->modalState;
+        $territoryCode = $this->modalTerritory;
         $color = $this->colorForMember($member->id, $this->activeRole);
 
-        DB::transaction(function () use ($member, $stateCode, $color) {
+        DB::transaction(function () use ($member, $territoryCode, $color) {
             $existing = TerritoryAssignment::query()
                 ->where('role_type', $this->activeRole)
-                ->where('state_code', $stateCode)
+                ->where('territory_code', $territoryCode)
                 ->with('salesTeamMember')
                 ->get();
 
@@ -127,27 +139,25 @@ class TerritoryAssignmentMap extends Component
             // Capture previous owners for audit
             $previous = $existing->filter(fn ($a) => $a->sales_team_member_id !== $member->id);
 
-            // Remove all current assignments for this state+role
+            // Remove all current assignments for this territory+role
             TerritoryAssignment::query()
                 ->where('role_type', $this->activeRole)
-                ->where('state_code', $stateCode)
+                ->where('territory_code', $territoryCode)
                 ->delete();
 
-            // Create the new whole-state assignment
             TerritoryAssignment::create([
                 'sales_team_member_id' => $member->id,
                 'role_type' => $this->activeRole,
-                'state_code' => $stateCode,
+                'territory_code' => $territoryCode,
                 'region' => null,
                 'color' => $color,
             ]);
 
-            // Audit
             if ($previous->isEmpty()) {
-                $this->logAudit('assigned', $stateCode, null, $member, null);
+                $this->logAudit('assigned', $territoryCode, null, $member, null);
             } else {
                 foreach ($previous as $prev) {
-                    $this->logAudit('reassigned', $stateCode, null, $member, $prev->salesTeamMember);
+                    $this->logAudit('reassigned', $territoryCode, null, $member, $prev->salesTeamMember);
                 }
             }
         });
@@ -156,30 +166,40 @@ class TerritoryAssignmentMap extends Component
         $this->refreshMapData();
         $this->dispatch('flash', [
             'type' => 'success',
-            'message' => "Assigned {$stateCode} to {$member->name}.",
+            'message' => "Assigned {$territoryCode} to {$member->name}.",
         ]);
     }
 
-    public function unassignFromState(int $assignmentId): void
+    public function assignWholeState(): void
+    {
+        $this->assignWholeTerritory();
+    }
+
+    public function unassignFromTerritory(int $assignmentId): void
     {
         $assignment = TerritoryAssignment::with('salesTeamMember')->find($assignmentId);
         if (! $assignment || $assignment->role_type->value !== $this->activeRole) {
             return;
         }
 
-        $stateCode = $assignment->state_code;
+        $territoryCode = $assignment->territory_code;
         $region = $assignment->region;
         $member = $assignment->salesTeamMember;
 
         $assignment->delete();
 
-        $this->logAudit('unassigned', $stateCode, $region, null, $member);
+        $this->logAudit('unassigned', $territoryCode, $region, null, $member);
 
         $this->refreshMapData();
         $this->dispatch('flash', [
             'type' => 'success',
-            'message' => "Removed {$member->name} from {$stateCode}".($region ? " ({$region})." : '.'),
+            'message' => "Removed {$member->name} from {$territoryCode}".($region ? " ({$region})." : '.'),
         ]);
+    }
+
+    public function unassignFromState(int $assignmentId): void
+    {
+        $this->unassignFromTerritory($assignmentId);
     }
 
     public function enterSplitMode(): void
@@ -188,7 +208,7 @@ class TerritoryAssignmentMap extends Component
 
         $existing = TerritoryAssignment::query()
             ->where('role_type', $this->activeRole)
-            ->where('state_code', $this->modalState)
+            ->where('territory_code', $this->modalTerritory)
             ->get();
 
         if ($existing->count() > 0 && $existing->every(fn ($a) => $a->region !== null)) {
@@ -217,11 +237,11 @@ class TerritoryAssignmentMap extends Component
 
     public function saveSplit(): void
     {
-        if (! $this->modalState) {
+        if (! $this->modalTerritory) {
             return;
         }
 
-        $stateCode = $this->modalState;
+        $territoryCode = $this->modalTerritory;
 
         // Validate: every row needs a member and a region
         $rows = collect($this->splitRows)
@@ -234,16 +254,16 @@ class TerritoryAssignmentMap extends Component
             return;
         }
 
-        DB::transaction(function () use ($stateCode, $rows) {
+        DB::transaction(function () use ($territoryCode, $rows) {
             $existing = TerritoryAssignment::query()
                 ->where('role_type', $this->activeRole)
-                ->where('state_code', $stateCode)
+                ->where('territory_code', $territoryCode)
                 ->with('salesTeamMember')
                 ->get();
 
             TerritoryAssignment::query()
                 ->where('role_type', $this->activeRole)
-                ->where('state_code', $stateCode)
+                ->where('territory_code', $territoryCode)
                 ->delete();
 
             foreach ($rows as $row) {
@@ -257,12 +277,12 @@ class TerritoryAssignmentMap extends Component
                 TerritoryAssignment::create([
                     'sales_team_member_id' => $member->id,
                     'role_type' => $this->activeRole,
-                    'state_code' => $stateCode,
+                    'territory_code' => $territoryCode,
                     'region' => trim($row['region']),
                     'color' => $color,
                 ]);
 
-                $this->logAudit('assigned', $stateCode, trim($row['region']), $member, null);
+                $this->logAudit('assigned', $territoryCode, trim($row['region']), $member, null);
             }
 
             // Audit removed previous assignments that aren't in the new set
@@ -270,7 +290,7 @@ class TerritoryAssignmentMap extends Component
             foreach ($existing as $prev) {
                 $key = $prev->sales_team_member_id.'|'.($prev->region ?? '');
                 if (! in_array($key, $newPairs, true)) {
-                    $this->logAudit('unassigned', $stateCode, $prev->region, null, $prev->salesTeamMember);
+                    $this->logAudit('unassigned', $territoryCode, $prev->region, null, $prev->salesTeamMember);
                 }
             }
         });
@@ -279,7 +299,7 @@ class TerritoryAssignmentMap extends Component
         $this->refreshMapData();
         $this->dispatch('flash', [
             'type' => 'success',
-            'message' => "Split assignments saved for {$stateCode}.",
+            'message' => "Split assignments saved for {$territoryCode}.",
         ]);
     }
 
@@ -316,7 +336,7 @@ class TerritoryAssignmentMap extends Component
         $this->refreshMapData();
         $this->dispatch('flash', [
             'type' => 'success',
-            'message' => "Created {$member->name}. Click states to assign territories.",
+            'message' => "Created {$member->name}. Click territories to assign.",
         ]);
     }
 
@@ -335,7 +355,7 @@ class TerritoryAssignmentMap extends Component
     }
 
     /**
-     * @return array{slug: string, name: string, color: string, state_count: int}[]
+     * @return array{slug: string, name: string, color: string, territory_count: int}[]
      */
     public function memberCards(): array
     {
@@ -347,7 +367,7 @@ class TerritoryAssignmentMap extends Component
                 'slug' => $m->slug,
                 'name' => $m->name,
                 'color' => $first?->color ?? $this->colorForMember($m->id, $this->activeRole),
-                'state_count' => $m->territoryAssignments->count(),
+                'territory_count' => $m->territoryAssignments->count(),
             ];
         })->all();
     }
@@ -363,7 +383,7 @@ class TerritoryAssignmentMap extends Component
             ->get();
 
         $people = [];
-        $states = [];
+        $territories = [];
         $colors = [];
 
         foreach ($assignments as $assignment) {
@@ -384,13 +404,19 @@ class TerritoryAssignmentMap extends Component
             $colors[$slug] = $assignment->color;
 
             if ($assignment->region) {
-                $states[$assignment->state_code][] = [
+                if (isset($territories[$assignment->territory_code]) && ! is_array($territories[$assignment->territory_code])) {
+                    $territories[$assignment->territory_code] = [
+                        $territories[$assignment->territory_code],
+                    ];
+                }
+
+                $territories[$assignment->territory_code][] = [
                     'id' => $assignment->id,
                     'key' => $slug,
                     'region' => $assignment->region,
                 ];
-            } else {
-                $states[$assignment->state_code] = [
+            } elseif (! isset($territories[$assignment->territory_code])) {
+                $territories[$assignment->territory_code] = [
                     'id' => $assignment->id,
                     'key' => $slug,
                 ];
@@ -414,7 +440,7 @@ class TerritoryAssignmentMap extends Component
         return [
             'role' => $this->activeRole,
             'people' => $people,
-            'states' => $states,
+            'territories' => $territories,
             'colors' => $colors,
             'armedSlug' => $this->armedMemberId
                 ? optional(SalesTeamMember::find($this->armedMemberId))->slug
@@ -424,13 +450,13 @@ class TerritoryAssignmentMap extends Component
 
     public function modalAssignments(): array
     {
-        if (! $this->modalState) {
+        if (! $this->modalTerritory) {
             return [];
         }
 
         return TerritoryAssignment::query()
             ->where('role_type', $this->activeRole)
-            ->where('state_code', $this->modalState)
+            ->where('territory_code', $this->modalTerritory)
             ->with('salesTeamMember')
             ->get()
             ->map(fn (TerritoryAssignment $a) => [
@@ -487,7 +513,7 @@ class TerritoryAssignmentMap extends Component
 
     private function logAudit(
         string $action,
-        string $stateCode,
+        string $territoryCode,
         ?string $region,
         ?SalesTeamMember $member,
         ?SalesTeamMember $previous
@@ -497,7 +523,7 @@ class TerritoryAssignmentMap extends Component
         TerritoryAssignmentAudit::create([
             'action' => $action,
             'role_type' => $this->activeRole,
-            'state_code' => $stateCode,
+            'territory_code' => $territoryCode,
             'region' => $region,
             'sales_team_member_id' => $member?->id,
             'member_name' => $member?->name,

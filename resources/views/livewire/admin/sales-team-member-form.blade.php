@@ -112,7 +112,7 @@
                 <div class="flex flex-wrap gap-2 mb-4">
                     @foreach($assignments as $index => $assignment)
                         <div wire:key="assignment-{{ $index }}" class="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-1.5">
-                            <span class="text-sm text-white font-medium">{{ $assignment['state_code'] }}</span>
+                            <span class="text-sm text-white font-medium">{{ $assignment['territory_code'] }}</span>
                             @if($assignment['region'])
                                 <span class="text-xs text-paleSky/60 italic">{{ $assignment['region'] }}</span>
                             @endif
@@ -133,19 +133,19 @@
             <div class="border-t border-white/10 pt-4">
                 <div class="flex flex-wrap items-end gap-3">
                     <div>
-                        <label class="block text-xs text-paleSky/50 mb-1">State</label>
-                        <select wire:model="newStateCode"
+                        <label class="block text-xs text-paleSky/50 mb-1">Territory</label>
+                        <select wire:model="newTerritoryCode"
                                 class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#00A599]">
                             <option value="">Select...</option>
-                            @foreach($this->stateCodes as $code)
-                                <option value="{{ $code }}">{{ $code }}</option>
+                            @foreach($this->territoryChoices as $code => $name)
+                                <option value="{{ $code }}">{{ $code }} - {{ $name }}</option>
                             @endforeach
                         </select>
-                        @error('newStateCode') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('newTerritoryCode') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
-                        <label class="block text-xs text-paleSky/50 mb-1">Region (for split states)</label>
+                        <label class="block text-xs text-paleSky/50 mb-1">Region (for split territories)</label>
                         <input type="text" wire:model="newRegion"
                                class="w-36 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#00A599]"
                                placeholder="e.g. Northern CA" />

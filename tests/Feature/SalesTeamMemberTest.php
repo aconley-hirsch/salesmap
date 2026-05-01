@@ -44,12 +44,12 @@ test('sales team manager can filter by role', function () {
     TerritoryAssignment::factory()->create([
         'sales_team_member_id' => $rsmMember->id,
         'role_type' => RoleType::Rsm,
-        'state_code' => 'WA',
+        'territory_code' => 'US-WA',
     ]);
     TerritoryAssignment::factory()->create([
         'sales_team_member_id' => $seMember->id,
         'role_type' => RoleType::Se,
-        'state_code' => 'OR',
+        'territory_code' => 'US-OR',
     ]);
 
     Livewire::actingAs($this->admin)
@@ -108,10 +108,10 @@ test('sales team form can add territory assignments', function () {
         ->test(SalesTeamMemberForm::class)
         ->set('form.name', 'Territory Person')
         ->set('roleType', 'rsm')
-        ->set('newStateCode', 'CA')
+        ->set('newTerritoryCode', 'US-CA')
         ->set('newRegion', 'Northern CA')
         ->call('addAssignment')
-        ->assertSet('assignments.0.state_code', 'CA')
+        ->assertSet('assignments.0.territory_code', 'US-CA')
         ->assertSet('assignments.0.region', 'Northern CA');
 });
 
@@ -129,13 +129,13 @@ test('sales team form saves territory assignments to database', function () {
         ->set('form.name', 'Assignment Person')
         ->set('form.email', 'ap@hirschsecure.com')
         ->set('roleType', 'se')
-        ->set('newStateCode', 'WA')
+        ->set('newTerritoryCode', 'US-WA')
         ->call('addAssignment')
         ->call('save');
 
     $member = SalesTeamMember::where('name', 'Assignment Person')->first();
     expect($member)->not->toBeNull();
     expect($member->territoryAssignments)->toHaveCount(1);
-    expect($member->territoryAssignments->first()->state_code)->toBe('WA');
+    expect($member->territoryAssignments->first()->territory_code)->toBe('US-WA');
     expect($member->territoryAssignments->first()->role_type)->toBe(RoleType::Se);
 });
